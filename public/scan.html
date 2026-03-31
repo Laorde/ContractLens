@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ContractLens — Scan Your Contract</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#c9a84c;--gold-dark:#8b6914;
+  --bg:#0c0c10;--bg2:#13131a;--bg3:#1a1a24;
+  --border:#2a2a38;--text:#e8e4dc;--muted:#7a7a8a;--faint:#3a3a4a;
+  --red:#ef4444;--green:#10b981;--yellow:#f59e0b;--pink:#ec4899;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--border);background:rgba(12,12,16,0.95);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+.nav-logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+.nav-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.nav-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--text)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.scan-badge{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 12px}
+.scan-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green)}
+.scan-dot.empty{background:var(--red);box-shadow:0 0 5px var(--red)}
+.scan-label{font-size:11px;color:var(--muted)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;border:none;padding:7px 16px;border-radius:6px;font-weight:500;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-block}
+
+/* MAIN */
+.container{max-width:860px;margin:0 auto;padding:32px 20px}
+
+/* MODE TABS */
+.mode-tabs{display:flex;gap:6px;margin-bottom:24px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:5px}
+.mode-tab{flex:1;text-align:center;padding:9px;border-radius:7px;font-size:12px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all 0.2s}
+.mode-tab.active{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;font-weight:500}
+
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:16px;background:var(--bg2);position:relative}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--gold)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:36px;margin-bottom:12px}
+.upload-title{font-size:15px;color:var(--text);margin-bottom:6px}
+.upload-sub{font-size:12px;color:var(--muted)}
+.upload-types{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.type-badge{background:var(--bg3);border:1px solid var(--border);color:var(--muted);font-size:10px;padding:3px 9px;border-radius:12px;letter-spacing:0.05em}
+
+/* FILE PREVIEW */
+.file-preview{display:none;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px;align-items:center;gap:12px}
+.file-preview.show{display:flex}
+.file-icon{font-size:22px;flex-shrink:0}
+.file-info{flex:1}
+.file-name{font-size:13px;color:var(--text);margin-bottom:2px}
+.file-size{font-size:11px;color:var(--muted)}
+.file-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px 6px}
+
+/* TEXT INPUT */
+.text-input{width:100%;min-height:200px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:16px;font-size:13px;font-family:'Courier New',monospace;line-height:1.7;resize:vertical;outline:none;margin-bottom:16px;transition:border-color 0.2s}
+.text-input:focus{border-color:var(--gold)}
+
+/* SCAN OPTIONS */
+.scan-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.option-card{background:var(--bg2);border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s}
+.option-card.selected{border-color:var(--gold);background:#1a1a2e}
+.option-card:hover{border-color:var(--faint)}
+.option-title{font-size:13px;font-weight:500;margin-bottom:4px;display:flex;align-items:center;gap:7px}
+.option-desc{font-size:11px;color:var(--muted);line-height:1.5}
+
+/* ANALYZE BUTTON */
+.analyze-btn{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity 0.2s;letter-spacing:0.02em}
+.analyze-btn:hover{opacity:0.88}
+.analyze-btn:disabled{background:var(--bg3);color:var(--muted);cursor:not-allowed}
+.char-count{font-size:11px;color:var(--muted);text-align:right;margin-bottom:10px}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:56px 24px}
+.loading.show{display:block}
+.loading-icon{font-size:38px;margin-bottom:14px;animation:pulse 2s ease infinite}
+.loading-title{font-size:16px;color:var(--gold);margin-bottom:6px}
+.loading-sub{font-size:12px;color:var(--muted)}
+.progress-bar{width:100%;height:3px;background:var(--border);border-radius:2px;margin:20px auto;max-width:300px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));border-radius:2px;animation:progress 3s ease forwards}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes progress{from{width:0}to{width:90%}}
+
+/* RESULTS */
+.results{display:none}
+.results.show{display:block}
+
+.result-header{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px 26px;margin-bottom:16px}
+.result-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.result-title{font-family:'Playfair Display',serif;font-size:20px;flex:1}
+.risk-badge{padding:4px 14px;border-radius:20px;font-weight:500;font-size:12px;letter-spacing:0.05em}
+.risk-bar-wrap{display:flex;align-items:center;gap:10px}
+.risk-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;min-width:80px}
+.risk-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.risk-score{font-size:12px;color:var(--muted)}
+.summary-text{font-size:13px;color:#b8b4ac;line-height:1.7}
+
+/* TLDR */
+.tldr-box{background:linear-gradient(135deg,#1a1a2e,#13131a);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:18px 22px;margin-bottom:16px}
+.tldr-label{font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px}
+.tldr-points{display:flex;flex-direction:column;gap:7px}
+.tldr-point{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#c8c4bc;line-height:1.5}
+.tldr-bullet{width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:7px}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:14px;text-align:center}
+.stat-icon{font-size:20px;margin-bottom:3px}
+.stat-val{font-size:22px;font-weight:700;margin-bottom:2px}
+.stat-label{font-size:10px;color:var(--muted)}
+
+/* TABS */
+.tabs{display:flex;gap:1px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:9px 14px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;margin-bottom:-1px;transition:color 0.15s}
+.tab.active{border-bottom-color:var(--gold);color:var(--gold)}
+
+.tab-content{background:var(--bg2);border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:20px;margin-bottom:16px}
+
+/* FLAGS */
+.flag-card{border-radius:8px;padding:14px;margin-bottom:10px}
+.flag-card:last-child{margin-bottom:0}
+.flag-header{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.flag-sev{padding:2px 9px;border-radius:11px;font-size:10px;font-weight:500}
+.flag-title{font-weight:500;font-size:13px}
+.flag-desc{font-size:12px;color:#9a9ab0;line-height:1.7}
+.flag-quote{border-left:3px solid;padding-left:10px;margin-top:8px;font-size:11px;font-family:'Courier New',monospace;color:var(--muted);line-height:1.6}
+
+/* TERMS */
+.term-row{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--border)}
+.term-row:last-child{border-bottom:none}
+.term-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.term-name{font-weight:500;font-size:13px;margin-bottom:3px}
+.term-impact{margin-left:7px;font-size:10px}
+.term-exp{font-size:12px;color:#9a9ab0;line-height:1.6}
+
+/* TRADEOFFS */
+.tradeoff-row{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.tradeoff-row:last-child{border-bottom:none}
+.tradeoff-give,.tradeoff-get{border-radius:7px;padding:10px 13px}
+.tradeoff-give{background:#1a0f0f;border:1px solid #3a1515}
+.tradeoff-get{background:#0f1a14;border:1px solid #1a3524}
+.tradeoff-label{font-size:9px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px}
+.tradeoff-text{font-size:11px;color:#c8c4bc;line-height:1.5}
+.tradeoff-arrow{font-size:16px;text-align:center}
+
+/* ADVICE */
+.advice-item{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid #1a1a28}
+.advice-item:last-child{border-bottom:none}
+.advice-num{color:var(--gold);font-weight:500;flex-shrink:0;font-size:13px}
+.advice-text{font-size:12px;color:#b8b4ac;line-height:1.6}
+.missing-item{display:flex;gap:8px;padding:9px 0;border-bottom:1px solid #1a1a28}
+.missing-item:last-child{border-bottom:none}
+.missing-x{color:var(--red);flex-shrink:0;font-size:13px}
+.missing-text{font-size:12px;color:#b8b4ac;line-height:1.6}
+.advice-section-title{font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;margin-top:16px}
+.advice-section-title:first-child{margin-top:0}
+
+/* UPSELL */
+.upsell-bar{background:#1a1a2e;border:1px solid #3a3a58;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.upsell-text h4{font-size:13px;color:var(--gold);margin-bottom:2px}
+.upsell-text p{font-size:11px;color:var(--muted)}
+
+/* DISCLAIMER */
+.disclaimer{padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:10px;color:var(--faint);line-height:1.6;margin-bottom:16px}
+
+/* BACK BTN */
+.back-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:5px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;margin-bottom:16px}
+
+/* PAYWALL */
+.paywall{background:#1a0f0f;border:1px solid #3a1515;border-radius:10px;padding:20px;margin-bottom:16px;display:none}
+.paywall.show{display:block}
+.paywall h3{color:var(--red);font-size:15px;margin-bottom:6px}
+.paywall p{font-size:13px;color:var(--muted);margin-bottom:14px}
+
+/* EMPTY STATE */
+.empty{color:var(--green);text-align:center;padding:28px;font-size:13px}
+
+@media(max-width:600px){
+  nav{padding:14px 16px}
+  .container{padding:20px 14px}
+  .scan-options{grid-template-columns:1fr}
+  .tradeoff-row{grid-template-columns:1fr}
+  .tradeoff-arrow{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">
+    <div class="nav-icon">⚖️</div>
+    <span class="nav-title">ContractLens</span>
+  </a>
+  <div class="nav-right">
+    <div class="scan-badge" id="scanBadge">
+      <div class="scan-dot" id="scanDot"></div>
+      <span class="scan-label" id="scanLabel">1 free scan remaining</span>
+    </div>
+    <button class="btn-gold" onclick="showUpgradeModal()">Upgrade</button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- INPUT SECTION -->
+  <div id="inputSection">
+    <div style="margin-bottom:20px">
+      <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:6px">Analyze your contract</div>
+      <div style="font-size:13px;color:var(--muted)">Upload a file or paste text — we'll flag every red flag, explain every clause, and summarize in plain English.</div>
+    </div>
+
+    <!-- MODE TABS -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="switchInputMode('upload')" id="tabUpload">📎 Upload File</button>
+      <button class="mode-tab" onclick="switchInputMode('paste')" id="tabPaste">📝 Paste Text</button>
+    </div>
+
+    <!-- UPLOAD MODE -->
+    <div id="uploadMode">
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept=".pdf,.txt,.text,.png,.jpg,.jpeg,.webp" onchange="handleFile(event)"/>
+        <div class="upload-icon">📄</div>
+        <div class="upload-title">Drop your contract here</div>
+        <div class="upload-sub">or click to browse files</div>
+        <div class="upload-types">
+          <span class="type-badge">PDF</span>
+          <span class="type-badge">TXT</span>
+          <span class="type-badge">JPG</span>
+          <span class="type-badge">PNG</span>
+          <span class="type-badge">WEBP</span>
+        </div>
+      </div>
+      <div class="file-preview" id="filePreview">
+        <div class="file-icon" id="fileIcon">📄</div>
+        <div class="file-info">
+          <div class="file-name" id="fileName"></div>
+          <div class="file-size" id="fileSize"></div>
+        </div>
+        <button class="file-remove" onclick="clearFile()">×</button>
+      </div>
+    </div>
+
+    <!-- PASTE MODE -->
+    <div id="pasteMode" style="display:none">
+      <textarea class="text-input" id="textInput" placeholder="Paste your contract text here... (lease agreement, employment contract, NDA, terms of service, freelance agreement, etc.)" oninput="updateCharCount()"></textarea>
+      <div class="char-count" id="charCount">0 characters</div>
+    </div>
+
+    <!-- SCAN OPTIONS -->
+    <div class="scan-options">
+      <div class="option-card selected" id="optFull" onclick="selectOption('full')">
+        <div class="option-title">⚖️ Full Analysis</div>
+        <div class="option-desc">Red flags, key terms, tradeoff analysis, missing clauses, and recommendations</div>
+      </div>
+      <div class="option-card" id="optTldr" onclick="selectOption('tldr')">
+        <div class="option-title">⚡ TL;DR Summary</div>
+        <div class="option-desc">Quick 5-bullet plain-English summary of what this contract actually means</div>
+      </div>
+    </div>
+
+    <!-- PAYWALL -->
+    <div class="paywall" id="paywallBox">
+      <h3>No scans remaining this week</h3>
+      <p>Your free scan resets in 7 days. Upgrade to Pro for 30 scans/month or grab a Lifetime deal for $197.</p>
+      <button class="btn-gold" onclick="showUpgradeModal()">See Plans</button>
+    </div>
+
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">🔍 Analyze Contract</button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loadingSection">
+    <div class="loading-icon">⚖️</div>
+    <div class="loading-title" id="loadingTitle">Reading your contract...</div>
+    <div class="loading-sub" id="loadingSub">Identifying red flags, tradeoffs, and key terms</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results" id="resultsSection">
+    <button class="back-btn" onclick="resetApp()">← New Analysis</button>
+
+    <!-- TLDR BOX (shown for both modes) -->
+    <div class="tldr-box" id="tldrBox" style="display:none">
+      <div class="tldr-label">⚡ TL;DR — Plain English Summary</div>
+      <div class="tldr-points" id="tldrPoints"></div>
+    </div>
+
+    <!-- FULL RESULTS (hidden in tldr mode) -->
+    <div id="fullResults">
+      <!-- Risk Header -->
+      <div class="result-header">
+        <div class="result-top">
+          <div class="result-title">Analysis Complete</div>
+          <span class="risk-badge" id="riskBadge"></span>
+        </div>
+        <div class="risk-bar-wrap" style="margin-bottom:12px">
+          <div class="risk-bar"><div class="risk-fill" id="riskFill"></div></div>
+          <span class="risk-score" id="riskScore"></span>
+        </div>
+        <div class="summary-text" id="summaryText"></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row" id="statsRow"></div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('flags')" id="t-flags">🚩 Red Flags</button>
+        <button class="tab" onclick="switchTab('terms')" id="t-terms">📋 Key Terms</button>
+        <button class="tab" onclick="switchTab('tradeoffs')" id="t-tradeoffs">⚖️ Tradeoffs</button>
+        <button class="tab" onclick="switchTab('advice')" id="t-advice">💡 Advice</button>
+      </div>
+      <div class="tab-content" id="tabContent"></div>
+    </div>
+
+    <!-- Upsell -->
+    <div class="upsell-bar" id="upsellBar" style="display:none">
+      <div class="upsell-text">
+        <h4>Need more scans?</h4>
+        <p>Upgrade to Pro ($12/mo) or grab a Lifetime deal for $197.</p>
+      </div>
+      <button class="btn-gold" onclick="showUpgradeModal()">See Plans</button>
+    </div>
+
+    <div class="disclaimer">⚠️ <strong style="color:var(--muted)">Not legal advice.</strong> ContractLens is for informational purposes only. For significant legal matters, consult a licensed attorney.</div>
+  </div>
+
+</div>
+
+<!-- UPGRADE MODAL -->
+<div id="upgradeModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.88);display:none;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#13131a;border:1px solid var(--border);border-radius:16px;padding:28px;max-width:500px;width:100%">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-family:'Playfair Display',serif;font-size:18px">Upgrade ContractLens</div>
+      <button onclick="hideUpgradeModal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px">Free</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text)">$0</div>
+        <div style="font-size:10px;color:var(--gold);margin:6px 0 12px">1 scan/week</div>
+        <div style="font-size:10px;color:var(--border);border:1px solid var(--border);border-radius:5px;padding:7px">Current Plan</div>
+      </div>
+      <div style="background:#1a1a2e;border:1px solid var(--gold);border-radius:10px;padding:16px;text-align:center;position:relative">
+        <div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;font-size:9px;font-weight:500;padding:2px 10px;border-radius:20px;white-space:nowrap">Most Popular</div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px">Pro</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text)">$12<span style="font-size:11px;color:var(--muted)">/mo</span></div>
+        <div style="font-size:10px;color:var(--gold);margin:6px 0 12px">30 scans/month</div>
+        <button onclick="joinWaitlist()" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;border:none;padding:8px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer">Join Waitlist</button>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px">Lifetime</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text)">$197</div>
+        <div style="font-size:10px;color:var(--gold);margin:6px 0 12px">Forever</div>
+        <button onclick="joinWaitlist()" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px;border-radius:6px;font-size:11px;cursor:pointer">Join Waitlist</button>
+      </div>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:16px">
+      <div style="font-size:12px;color:var(--gold);font-weight:500;margin-bottom:6px">📬 Get early access + founder discount</div>
+      <div style="display:flex;gap:8px">
+        <input type="email" id="modalEmail" placeholder="your@email.com" style="flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:6px;font-size:12px;outline:none;font-family:'DM Sans',sans-serif"/>
+        <button onclick="submitWaitlist()" style="background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;border:none;padding:9px 16px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer" id="waitlistBtn">Notify Me</button>
+      </div>
+      <div id="waitlistSuccess" style="display:none;margin-top:10px;color:var(--green);font-size:12px">🎉 You're on the list! We'll email you when paid plans launch.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── State ──────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'contractlens_usage';
+const FREE_SCANS = 1;
+let currentFile = null;
+let currentFileType = null;
+let currentTab = 'flags';
+let currentAnalysis = null;
+let scanMode = 'full';
+
+// ── Scan tracking ──────────────────────────────────────────────────────────
+function getUsage() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { count: 0, weekStart: Date.now() }; }
+  catch { return { count: 0, weekStart: Date.now() }; }
+}
+function saveUsage(u) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(u)); } catch {} }
+function getScansLeft() {
+  let u = getUsage();
+  if (Date.now() - u.weekStart > 604800000) { u = { count: 0, weekStart: Date.now() }; saveUsage(u); }
+  return Math.max(0, FREE_SCANS - u.count);
+}
+function useOneScan() {
+  let u = getUsage();
+  if (Date.now() - u.weekStart > 604800000) u = { count: 0, weekStart: Date.now() };
+  u.count++; saveUsage(u);
+}
+function updateScanBadge() {
+  const n = getScansLeft();
+  document.getElementById('scanDot').className = 'scan-dot' + (n > 0 ? '' : ' empty');
+  document.getElementById('scanLabel').textContent = n > 0 ? `${n} free scan remaining this week` : 'No scans left — upgrade';
+  const paywall = document.getElementById('paywallBox');
+  const btn = document.getElementById('analyzeBtn');
+  if (n === 0) {
+    paywall.classList.add('show');
+    btn.disabled = true;
+    btn.textContent = '🔒 Upgrade to Scan';
+  } else {
+    paywall.classList.remove('show');
+    btn.disabled = false;
+    btn.textContent = '🔍 Analyze Contract';
+  }
+}
+
+// ── Input mode ─────────────────────────────────────────────────────────────
+function switchInputMode(mode) {
+  document.getElementById('uploadMode').style.display = mode === 'upload' ? 'block' : 'none';
+  document.getElementById('pasteMode').style.display = mode === 'paste' ? 'block' : 'none';
+  document.getElementById('tabUpload').className = 'mode-tab' + (mode === 'upload' ? ' active' : '');
+  document.getElementById('tabPaste').className = 'mode-tab' + (mode === 'paste' ? ' active' : '');
+}
+function selectOption(opt) {
+  scanMode = opt;
+  document.getElementById('optFull').className = 'option-card' + (opt === 'full' ? ' selected' : '');
+  document.getElementById('optTldr').className = 'option-card' + (opt === 'tldr' ? ' selected' : '');
+}
+function updateCharCount() {
+  const n = document.getElementById('textInput').value.length;
+  document.getElementById('charCount').textContent = n.toLocaleString() + ' characters';
+}
+
+// ── File handling ──────────────────────────────────────────────────────────
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  setFile(file);
+}
+function setFile(file) {
+  currentFile = file;
+  const ext = file.name.split('.').pop().toLowerCase();
+  currentFileType = ['png','jpg','jpeg','webp'].includes(ext) ? 'image' : ext === 'pdf' ? 'pdf' : 'text';
+  const icons = { pdf: '📕', image: '🖼️', text: '📄' };
+  document.getElementById('fileIcon').textContent = icons[currentFileType] || '📄';
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = formatSize(file.size);
+  document.getElementById('filePreview').classList.add('show');
+}
+function clearFile() {
+  currentFile = null; currentFileType = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('filePreview').classList.remove('show');
+}
+function formatSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/(1024*1024)).toFixed(1) + ' MB';
+}
+
+// Drag and drop
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) setFile(file);
+});
+
+// ── PDF extraction ─────────────────────────────────────────────────────────
+async function extractPdfText(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = '';
+  for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(item => item.str).join(' ') + '\n';
+  }
+  return text.trim();
+}
+
+// ── Image to base64 ────────────────────────────────────────────────────────
+async function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => res(e.target.result.split(',')[1]);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── Prompts ────────────────────────────────────────────────────────────────
+const FULL_SYSTEM = `You are an expert contract attorney and consumer advocate. Analyze contracts and return ONLY valid JSON (no markdown, no backticks, no preamble).
+Return this exact structure:
+{
+  "summary": "2-3 sentence plain English overview",
+  "tldr": ["Point 1 in plain English","Point 2","Point 3","Point 4","Point 5"],
+  "overallRisk": "LOW"|"MEDIUM"|"HIGH"|"CRITICAL",
+  "riskScore": 0-100,
+  "keyTerms": [{"term":"name","explanation":"plain English","impact":"POSITIVE"|"NEUTRAL"|"NEGATIVE"}],
+  "redFlags": [{"title":"title","description":"plain language","severity":"LOW"|"MEDIUM"|"HIGH"|"CRITICAL","quote":"exact text or empty string"}],
+  "fairTradeoffs": [{"youGive":"what you give","youGet":"what you get","balanced":true|false}],
+  "recommendations": ["rec1","rec2"],
+  "missingClauses": ["clause1","clause2"]
+}`;
+
+const TLDR_SYSTEM = `You are an expert contract attorney. Analyze this contract and return ONLY valid JSON (no markdown, no backticks, no preamble).
+Return this exact structure:
+{
+  "tldr": ["Plain English point 1 about what this contract means for you","Point 2","Point 3","Point 4","Point 5"],
+  "overallRisk": "LOW"|"MEDIUM"|"HIGH"|"CRITICAL",
+  "riskScore": 0-100,
+  "summary": "One sentence overview"
+}`;
+
+// ── Analyze ────────────────────────────────────────────────────────────────
+async function analyze() {
+  if (getScansLeft() <= 0) { showUpgradeModal(); return; }
+
+  let messages;
+  const isTldr = scanMode === 'tldr';
+  const system = isTldr ? TLDR_SYSTEM : FULL_SYSTEM;
+
+  // Build message based on input type
+  const pasteMode = document.getElementById('pasteMode').style.display !== 'none';
+
+  if (pasteMode) {
+    const text = document.getElementById('textInput').value.trim();
+    if (!text) { alert('Please paste some contract text first.'); return; }
+    messages = [{ role: 'user', content: `Analyze this contract:\n\n${text.slice(0, 15000)}` }];
+  } else if (currentFile) {
+    if (currentFileType === 'pdf') {
+      try {
+        const text = await extractPdfText(currentFile);
+        if (!text || text.length < 50) { alert('Could not extract text from this PDF. Try copying and pasting the text instead.'); return; }
+        messages = [{ role: 'user', content: `Analyze this contract:\n\n${text.slice(0, 15000)}` }];
+      } catch { alert('Error reading PDF. Please try pasting the text instead.'); return; }
+    } else if (currentFileType === 'image') {
+      try {
+        const b64 = await fileToBase64(currentFile);
+        const ext = currentFile.name.split('.').pop().toLowerCase();
+        const mediaType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'png' ? 'image/png' : 'image/webp';
+        messages = [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+            { type: 'text', text: 'Analyze this contract image and return the JSON analysis.' }
+          ]
+        }];
+      } catch { alert('Error reading image file. Please try a different file.'); return; }
+    } else {
+      const text = await currentFile.text();
+      messages = [{ role: 'user', content: `Analyze this contract:\n\n${text.slice(0, 15000)}` }];
+    }
+  } else {
+    alert('Please upload a file or paste contract text first.');
+    return;
+  }
+
+  // Show loading
+  document.getElementById('inputSection').style.display = 'none';
+  const loadingSection = document.getElementById('loadingSection');
+  loadingSection.classList.add('show');
+
+  // Animated loading messages
+  const messages_loading = isTldr
+    ? ['Reading your contract...', 'Summarizing key points...', 'Almost done...']
+    : ['Reading every clause...', 'Flagging red flags...', 'Analyzing tradeoffs...', 'Building your report...'];
+  let msgIdx = 0;
+  const msgInterval = setInterval(() => {
+    msgIdx = (msgIdx + 1) % messages_loading.length;
+    document.getElementById('loadingTitle').textContent = messages_loading[msgIdx];
+  }, 2000);
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, system, mode: scanMode })
+    });
+
+    clearInterval(msgInterval);
+
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const raw = data.content.map(b => b.text || '').join('');
+    const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+    useOneScan();
+    updateScanBadge();
+    currentAnalysis = analysis;
+
+    loadingSection.classList.remove('show');
+    renderResults(analysis, isTldr);
+
+  } catch (err) {
+    clearInterval(msgInterval);
+    loadingSection.classList.remove('show');
+    document.getElementById('inputSection').style.display = 'block';
+    alert('Something went wrong analyzing the contract. Please try again.');
+  }
+}
+
+// ── Render results ─────────────────────────────────────────────────────────
+const RISK_COLORS = {
+  LOW:      { bg:'#d1fae5', text:'#065f46', border:'#6ee7b7', fill:'#10b981' },
+  MEDIUM:   { bg:'#fef3c7', text:'#92400e', border:'#fcd34d', fill:'#f59e0b' },
+  HIGH:     { bg:'#fee2e2', text:'#991b1b', border:'#fca5a5', fill:'#ef4444' },
+  CRITICAL: { bg:'#fce7f3', text:'#831843', border:'#f9a8d4', fill:'#ec4899' },
+};
+const IMPACT_COLORS = { POSITIVE:'#10b981', NEUTRAL:'#6b7280', NEGATIVE:'#ef4444' };
+
+function renderResults(a, isTldr) {
+  const rs = RISK_COLORS[a.overallRisk] || RISK_COLORS.LOW;
+
+  // TL;DR
+  const tldrBox = document.getElementById('tldrBox');
+  const tldrPoints = document.getElementById('tldrPoints');
+  if (a.tldr && a.tldr.length) {
+    tldrBox.style.display = 'block';
+    tldrPoints.innerHTML = a.tldr.map(p => `<div class="tldr-point"><div class="tldr-bullet"></div><span>${p}</span></div>`).join('');
+  }
+
+  if (isTldr) {
+    document.getElementById('fullResults').style.display = 'none';
+  } else {
+    document.getElementById('fullResults').style.display = 'block';
+
+    // Risk header
+    const badge = document.getElementById('riskBadge');
+    badge.textContent = a.overallRisk;
+    badge.style.cssText = `background:${rs.bg};color:${rs.text};padding:4px 14px;border-radius:20px;font-weight:500;font-size:12px`;
+    document.getElementById('riskFill').style.cssText = `width:${a.riskScore}%;background:${rs.fill}`;
+    document.getElementById('riskScore').textContent = `${a.riskScore}/100`;
+    document.getElementById('summaryText').textContent = a.summary || '';
+
+    // Stats
+    document.getElementById('statsRow').innerHTML = [
+      { label:'Red Flags', value:a.redFlags?.length||0, icon:'🚩', color:'#ef4444' },
+      { label:'Key Terms', value:a.keyTerms?.length||0, icon:'📋', color:'#c9a84c' },
+      { label:'Tradeoffs', value:a.fairTradeoffs?.length||0, icon:'⚖️', color:'#6366f1' },
+      { label:'Missing', value:a.missingClauses?.length||0, icon:'❌', color:'#f97316' },
+    ].map(s => `<div class="stat-card"><div class="stat-icon">${s.icon}</div><div class="stat-val" style="color:${s.color}">${s.value}</div><div class="stat-label">${s.label}</div></div>`).join('');
+
+    switchTab('flags');
+  }
+
+  // Upsell if no scans left
+  if (getScansLeft() === 0) document.getElementById('upsellBar').style.display = 'flex';
+
+  document.getElementById('resultsSection').classList.add('show');
+}
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  ['flags','terms','tradeoffs','advice'].forEach(t => {
+    document.getElementById(`t-${t}`).className = 'tab' + (t === tab ? ' active' : '');
+  });
+  const a = currentAnalysis;
+  const el = document.getElementById('tabContent');
+
+  if (tab === 'flags') {
+    if (!a.redFlags?.length) { el.innerHTML = '<div class="empty">✅ No major red flags found!</div>'; return; }
+    el.innerHTML = a.redFlags.map(f => {
+      const s = RISK_COLORS[f.severity] || RISK_COLORS.MEDIUM;
+      return `<div class="flag-card" style="background:#0f0f13;border:1px solid ${s.border}">
+        <div class="flag-header">
+          <span class="flag-sev" style="background:${s.bg};color:${s.text}">${f.severity}</span>
+          <span class="flag-title">${f.title}</span>
+        </div>
+        <div class="flag-desc">${f.description}</div>
+        ${f.quote ? `<div class="flag-quote" style="border-left-color:${s.border}">"${f.quote}"</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  if (tab === 'terms') {
+    if (!a.keyTerms?.length) { el.innerHTML = '<div class="empty">No key terms found.</div>'; return; }
+    el.innerHTML = a.keyTerms.map(t => `
+      <div class="term-row">
+        <div class="term-dot" style="background:${IMPACT_COLORS[t.impact]}"></div>
+        <div>
+          <div class="term-name">${t.term}<span class="term-impact" style="color:${IMPACT_COLORS[t.impact]}">${t.impact==='POSITIVE'?'↑ Favorable':t.impact==='NEGATIVE'?'↓ Unfavorable':'→ Neutral'}</span></div>
+          <div class="term-exp">${t.explanation}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  if (tab === 'tradeoffs') {
+    if (!a.fairTradeoffs?.length) { el.innerHTML = '<div class="empty">No tradeoffs found.</div>'; return; }
+    el.innerHTML = a.fairTradeoffs.map(t => `
+      <div class="tradeoff-row">
+        <div class="tradeoff-give"><div class="tradeoff-label" style="color:#ef4444">You Give</div><div class="tradeoff-text">${t.youGive}</div></div>
+        <div class="tradeoff-arrow" style="color:${t.balanced?'#10b981':'#ef4444'}">${t.balanced?'⇌':'⚠️'}</div>
+        <div class="tradeoff-get"><div class="tradeoff-label" style="color:#10b981">You Get</div><div class="tradeoff-text">${t.youGet}</div></div>
+      </div>`).join('') + '<div style="margin-top:6px;font-size:10px;color:var(--faint)">⇌ = balanced · ⚠️ = potentially unfair</div>';
+  }
+
+  if (tab === 'advice') {
+    let html = '';
+    if (a.recommendations?.length) {
+      html += '<div class="advice-section-title">💡 Before You Sign</div>';
+      html += a.recommendations.map((r,i) => `<div class="advice-item"><span class="advice-num">${i+1}.</span><span class="advice-text">${r}</span></div>`).join('');
+    }
+    if (a.missingClauses?.length) {
+      html += '<div class="advice-section-title">❌ Missing Protections</div>';
+      html += a.missingClauses.map(c => `<div class="missing-item"><span class="missing-x">✗</span><span class="missing-text">${c}</span></div>`).join('');
+    }
+    el.innerHTML = html || '<div class="empty">No specific advice found.</div>';
+  }
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────
+function resetApp() {
+  currentFile = null; currentFileType = null; currentAnalysis = null;
+  document.getElementById('inputSection').style.display = 'block';
+  document.getElementById('resultsSection').classList.remove('show');
+  document.getElementById('tldrBox').style.display = 'none';
+  document.getElementById('upsellBar').style.display = 'none';
+  document.getElementById('filePreview').classList.remove('show');
+  document.getElementById('fileInput').value = '';
+  document.getElementById('textInput').value = '';
+  document.getElementById('charCount').textContent = '0 characters';
+  updateScanBadge();
+}
+
+// ── Upgrade modal ──────────────────────────────────────────────────────────
+function showUpgradeModal() {
+  document.getElementById('upgradeModal').style.display = 'flex';
+}
+function hideUpgradeModal() {
+  document.getElementById('upgradeModal').style.display = 'none';
+}
+function joinWaitlist() {
+  document.getElementById('modalEmail').focus();
+}
+function submitWaitlist() {
+  const email = document.getElementById('modalEmail').value;
+  if (!email.includes('@')) { document.getElementById('modalEmail').style.borderColor = '#ef4444'; return; }
+  document.getElementById('waitlistBtn').textContent = 'Saved!';
+  document.getElementById('waitlistSuccess').style.display = 'block';
+}
+document.getElementById('upgradeModal').addEventListener('click', function(e) {
+  if (e.target === this) hideUpgradeModal();
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+updateScanBadge();
+</script>
+</body>
+</html>
