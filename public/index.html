@@ -701,16 +701,51 @@
 </footer>
 
 <script>
-  function submitWaitlist() {
-    const email = document.getElementById('waitlist-email').value;
+  async function submitWaitlist() {
+    const emailInput = document.getElementById('waitlist-email');
+    const btn = document.querySelector('.waitlist-form .btn-gold');
+    const email = emailInput.value.trim();
+
     if (!email.includes('@')) {
-      document.getElementById('waitlist-email').style.borderColor = '#ef4444';
+      emailInput.style.borderColor = '#ef4444';
+      emailInput.focus();
       return;
     }
-    document.getElementById('waitlist-email').style.borderColor = '#10b981';
-    document.querySelector('.waitlist-form').style.display = 'none';
-    document.getElementById('waitlist-success').style.display = 'block';
+
+    // Loading state
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    emailInput.disabled = true;
+
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        emailInput.style.borderColor = '#10b981';
+        document.querySelector('.waitlist-form').style.display = 'none';
+        document.getElementById('waitlist-success').style.display = 'block';
+      } else {
+        throw new Error(data.error || 'Failed');
+      }
+    } catch (err) {
+      btn.textContent = 'Notify Me';
+      btn.disabled = false;
+      emailInput.disabled = false;
+      emailInput.style.borderColor = '#ef4444';
+      emailInput.placeholder = 'Something went wrong — try again';
+    }
   }
+
+  // Allow pressing Enter in the email field
+  document.getElementById('waitlist-email').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') submitWaitlist();
+  });
 
   // Smooth scroll for anchor links
   document.querySelectorAll('a[href^="#"]').forEach(a => {
