@@ -322,14 +322,70 @@
   }
 
   /* ── Responsive ── */
-  @media (max-width: 640px) {
-    nav { padding: 16px 20px; }
+  @media (max-width: 768px) {
+    /* Nav */
+    nav { padding: 14px 18px; }
     .nav-links { display: none; }
-    footer { padding: 28px 20px; flex-direction: column; text-align: center; }
-    .step:first-child, .step:last-child { border-radius: 0; }
+
+    /* Hero */
+    .hero { padding: 48px 18px 40px; min-height: auto; }
+    .hero h1 { font-size: 36px; line-height: 1.1; }
+    .hero-sub { font-size: 14px; padding: 0 4px; }
+    .hero-cta { flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+    .hero-cta a { width: 100%; text-align: center; box-sizing: border-box; }
+    .hero-social-proof { font-size: 11px; gap: 6px; flex-wrap: wrap; justify-content: center; }
+
+    /* Hide mock UI preview on mobile - too complex to render well */
+    .hero-preview { display: none; }
+
+    /* Sections */
+    .section { padding: 52px 18px; }
+    .section-inner { max-width: 100%; }
+    .section-title { font-size: 26px; }
+    .section-sub { font-size: 13px; max-width: 100%; margin-bottom: 32px; }
+
+    /* Steps */
+    .steps { grid-template-columns: 1fr; gap: 2px; }
+    .step { padding: 24px 20px; }
     .step:first-child { border-radius: 12px 12px 0 0; }
     .step:last-child { border-radius: 0 0 12px 12px; }
     .step-connector { display: none; }
+
+    /* Features */
+    .features-grid { grid-template-columns: 1fr; gap: 12px; }
+    .feature-card { padding: 20px; }
+
+    /* Testimonials */
+    .testimonials-grid { grid-template-columns: 1fr; gap: 12px; }
+    .testi-card { padding: 20px; }
+
+    /* Pricing */
+    .pricing-grid { grid-template-columns: 1fr; gap: 14px; max-width: 100%; }
+    .pricing-card { padding: 22px 18px; }
+
+    /* Waitlist */
+    .waitlist-inner { padding: 52px 18px; }
+    .waitlist-inner h2 { font-size: 26px; }
+    .waitlist-inner p { font-size: 13px; }
+    .waitlist-form { flex-direction: column; align-items: stretch; }
+    .waitlist-input { min-width: unset; width: 100%; }
+    .waitlist-form .btn-gold { width: 100%; text-align: center; padding: 13px; }
+
+    /* Footer */
+    footer { padding: 28px 18px; flex-direction: column; text-align: center; align-items: center; }
+    .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+    .footer-note { text-align: center; }
+  }
+
+  @media (max-width: 400px) {
+    .hero h1 { font-size: 30px; }
+    .hero-eyebrow { font-size: 10px; padding: 4px 10px; }
+  }
+
+  /* Mobile nav CTA */
+  .mobile-cta { display: none; }
+  @media (max-width: 768px) {
+    .mobile-cta { display: inline-block; padding: 7px 14px; font-size: 12px; }
   }
 </style>
 </head>
@@ -337,7 +393,7 @@
 
 <!-- NAV -->
 <nav>
-  <a class="nav-logo" href="/scan">
+  <a class="nav-logo" href="#">
     <div class="nav-logo-icon">⚖️</div>
     <span class="nav-logo-text">ContractLens</span>
   </a>
@@ -345,8 +401,9 @@
     <a href="#how-it-works">How it works</a>
     <a href="#pricing">Pricing</a>
     <a href="#waitlist">Early Access</a>
-    <a href="/scan" class="btn-gold">Try Free — It's Free</a>
+    <a href="/scan" class="btn-gold">Try Free</a>
   </div>
+  <a href="/scan" class="btn-gold mobile-cta">Try Free</a>
 </nav>
 
 <!-- HERO -->
@@ -363,7 +420,7 @@
   </p>
 
   <div class="hero-cta">
-    <a href="#waitlist" class="btn-gold" style="padding:13px 28px;font-size:14px;">Get Early Access — Free</a>
+    <a href="/scan" class="btn-gold" style="padding:13px 28px;font-size:14px;">Get Early Access — Free</a>
     <a href="#how-it-works" class="btn-outline" style="padding:13px 22px;font-size:14px;">See How It Works</a>
   </div>
 
@@ -571,7 +628,7 @@
           <div class="pricing-feature">Plain-English summary</div>
           <div class="pricing-feature">Risk score</div>
         </div>
-        <a href="/scan" class="btn-ghost" style="display:block;text-align:center;text-decoration:none;padding:11px;">Try Free Now</a>
+        <a href="#" class="btn-ghost" style="display:block;text-align:center;text-decoration:none;padding:11px;">Try Free Now</a>
       </div>
 
       <div class="pricing-card featured">
@@ -637,8 +694,8 @@
     <a href="#how-it-works">How it works</a>
     <a href="#pricing">Pricing</a>
     <a href="#waitlist">Waitlist</a>
-    <a href="/scan">Privacy</a>
-    <a href="/scan">Terms</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
   </div>
   <div class="footer-note">Not legal advice. Always consult a licensed attorney for significant contracts.</div>
 </footer>
