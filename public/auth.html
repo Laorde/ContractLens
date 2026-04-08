@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ContractLens — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#c9a84c;--gold-dark:#8b6914;
+  --bg:#0c0c10;--bg2:#13131a;--bg3:#1a1a24;
+  --border:#2a2a38;--text:#e8e4dc;--muted:#7a7a8a;--faint:#3a3a4a;
+  --red:#ef4444;--green:#10b981;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;display:flex;flex-direction:column}
+
+nav{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--border);background:rgba(12,12,16,0.95);backdrop-filter:blur(12px)}
+.nav-logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+.nav-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.nav-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--text)}
+
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px;width:100%;max-width:420px}
+.card-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:6px;text-align:center}
+.card-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:32px}
+
+.tabs{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:4px;margin-bottom:28px}
+.tab{flex:1;text-align:center;padding:8px;border-radius:6px;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all 0.2s}
+.tab.active{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;font-weight:500}
+
+.field{margin-bottom:16px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;letter-spacing:0.03em}
+input[type=email],input[type=password]{
+  width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  padding:11px 14px;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;
+  outline:none;transition:border-color 0.2s
+}
+input[type=email]:focus,input[type=password]:focus{border-color:var(--gold)}
+input::placeholder{color:var(--faint)}
+
+.btn{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity 0.2s;margin-top:4px}
+.btn:hover{opacity:0.88}
+.btn:disabled{background:var(--faint);color:var(--muted);cursor:not-allowed;opacity:1}
+
+.msg{font-size:12px;padding:10px 14px;border-radius:7px;margin-top:16px;display:none;line-height:1.5}
+.msg.error{background:#1a0f0f;border:1px solid #3a1515;color:var(--red);display:block}
+.msg.success{background:#0f1a14;border:1px solid #1a3524;color:var(--green);display:block}
+
+.divider{display:flex;align-items:center;gap:12px;margin:24px 0;color:var(--faint);font-size:11px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.plan-note{background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px}
+.plan-note strong{color:var(--gold)}
+
+.switch-link{text-align:center;margin-top:20px;font-size:12px;color:var(--muted)}
+.switch-link a{color:var(--gold);cursor:pointer;text-decoration:none}
+.switch-link a:hover{text-decoration:underline}
+
+footer{text-align:center;padding:16px;font-size:11px;color:var(--faint);border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">
+    <div class="nav-icon">⚖️</div>
+    <span class="nav-title">ContractLens</span>
+  </a>
+</nav>
+
+<main>
+  <div class="card">
+    <div class="card-title">Welcome back</div>
+    <div class="card-sub">Sign in to analyze your contracts</div>
+
+    <div class="tabs">
+      <button class="tab active" id="tabLogin" onclick="switchMode('login')">Sign In</button>
+      <button class="tab" id="tabSignup" onclick="switchMode('signup')">Create Account</button>
+    </div>
+
+    <!-- Sign In Form -->
+    <div id="loginForm">
+      <div class="field">
+        <label for="loginEmail">Email address</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <button class="btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
+      <div style="text-align:right;margin-top:10px">
+        <a style="font-size:11px;color:var(--muted);cursor:pointer" onclick="showForgot()">Forgot password?</a>
+      </div>
+    </div>
+
+    <!-- Sign Up Form -->
+    <div id="signupForm" style="display:none">
+      <div class="plan-note">
+        Start free — <strong>2 scans included</strong> every month, no credit card required.
+      </div>
+      <div class="field">
+        <label for="signupEmail">Email address</label>
+        <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+      <div class="field">
+        <label for="signupPassword">Password</label>
+        <input type="password" id="signupPassword" placeholder="Min. 8 characters" autocomplete="new-password"/>
+      </div>
+      <div class="field">
+        <label for="signupConfirm">Confirm password</label>
+        <input type="password" id="signupConfirm" placeholder="••••••••" autocomplete="new-password"/>
+      </div>
+      <button class="btn" id="signupBtn" onclick="handleSignup()">Create Free Account</button>
+    </div>
+
+    <!-- Forgot Password Form -->
+    <div id="forgotForm" style="display:none">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">
+        Enter your email and we'll send you a reset link.
+      </div>
+      <div class="field">
+        <label for="forgotEmail">Email address</label>
+        <input type="email" id="forgotEmail" placeholder="you@example.com"/>
+      </div>
+      <button class="btn" id="forgotBtn" onclick="handleForgot()">Send Reset Link</button>
+      <div class="switch-link" style="margin-top:16px">
+        <a onclick="showLogin()">← Back to sign in</a>
+      </div>
+    </div>
+
+    <div class="msg" id="msgBox"></div>
+
+    <div class="switch-link" id="switchNote">
+      Don't have an account? <a onclick="switchMode('signup')">Create one free</a>
+    </div>
+  </div>
+</main>
+
+<footer>ContractLens · Not legal advice · <a href="/" style="color:var(--faint)">Home</a></footer>
+
+<script>
+// ── Supabase init ──────────────────────────────────────────────
+const SUPABASE_URL  = "https://vsgnqtwrknbrczhtwzhk.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzZ25xdHdya25icmN6aHR3emhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MjM3ODEsImV4cCI6MjA5MTA5OTc4MX0.vAgm-0O8c9nR5jCWOxImfAfFKS8cHHcvxaHUJLk1nhw";
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── Redirect if already signed in ─────────────────────────────
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    const dest = new URLSearchParams(window.location.search).get("redirect") || "/scan";
+    window.location.href = dest;
+  }
+})();
+
+// ── Mode switching ─────────────────────────────────────────────
+function switchMode(mode) {
+  clearMsg();
+  document.getElementById("loginForm").style.display   = mode === "login"   ? "block" : "none";
+  document.getElementById("signupForm").style.display  = mode === "signup"  ? "block" : "none";
+  document.getElementById("forgotForm").style.display  = "none";
+  document.getElementById("tabLogin").classList.toggle("active",  mode === "login");
+  document.getElementById("tabSignup").classList.toggle("active", mode === "signup");
+  document.getElementById("switchNote").style.display  = "block";
+  document.getElementById("switchNote").innerHTML =
+    mode === "login"
+      ? 'Don\'t have an account? <a onclick="switchMode(\'signup\')">Create one free</a>'
+      : 'Already have an account? <a onclick="switchMode(\'login\')">Sign in</a>';
+}
+
+function showForgot() {
+  clearMsg();
+  document.getElementById("loginForm").style.display  = "none";
+  document.getElementById("forgotForm").style.display = "block";
+  document.getElementById("switchNote").style.display = "none";
+  document.getElementById("tabLogin").classList.remove("active");
+}
+function showLogin() { switchMode("login"); }
+
+// ── Sign In ────────────────────────────────────────────────────
+async function handleLogin() {
+  const email    = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  if (!email || !password) return showMsg("Please fill in all fields.", "error");
+
+  setLoading("loginBtn", true);
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  setLoading("loginBtn", false);
+
+  if (error) return showMsg(error.message, "error");
+
+  const dest = new URLSearchParams(window.location.search).get("redirect") || "/scan";
+  window.location.href = dest;
+}
+
+// ── Sign Up ────────────────────────────────────────────────────
+async function handleSignup() {
+  const email   = document.getElementById("signupEmail").value.trim();
+  const pass    = document.getElementById("signupPassword").value;
+  const confirm = document.getElementById("signupConfirm").value;
+
+  if (!email || !pass || !confirm) return showMsg("Please fill in all fields.", "error");
+  if (pass.length < 8)             return showMsg("Password must be at least 8 characters.", "error");
+  if (pass !== confirm)            return showMsg("Passwords don't match.", "error");
+
+  setLoading("signupBtn", true);
+  const { error } = await sb.auth.signUp({
+    email,
+    password: pass,
+    options: { emailRedirectTo: window.location.origin + "/scan" },
+  });
+  setLoading("signupBtn", false);
+
+  if (error) return showMsg(error.message, "error");
+
+  showMsg("Check your inbox — we sent you a confirmation link.", "success");
+}
+
+// ── Forgot Password ────────────────────────────────────────────
+async function handleForgot() {
+  const email = document.getElementById("forgotEmail").value.trim();
+  if (!email) return showMsg("Please enter your email.", "error");
+
+  setLoading("forgotBtn", true);
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + "/auth?mode=reset",
+  });
+  setLoading("forgotBtn", false);
+
+  if (error) return showMsg(error.message, "error");
+  showMsg("Reset link sent — check your inbox.", "success");
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function showMsg(text, type) {
+  const el = document.getElementById("msgBox");
+  el.textContent = text;
+  el.className = "msg " + type;
+}
+function clearMsg() {
+  const el = document.getElementById("msgBox");
+  el.className = "msg";
+  el.textContent = "";
+}
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.textContent = loading ? "Please wait…" : btn.getAttribute("data-label") || btn.textContent;
+}
+
+// Store original button labels
+window.addEventListener("DOMContentLoaded", () => {
+  ["loginBtn","signupBtn","forgotBtn"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute("data-label", el.textContent);
+  });
+  // Check URL for ?mode=signup
+  const mode = new URLSearchParams(window.location.search).get("mode");
+  if (mode === "signup") switchMode("signup");
+});
+
+// Allow Enter key submission
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  const loginVisible  = document.getElementById("loginForm").style.display  !== "none";
+  const signupVisible = document.getElementById("signupForm").style.display !== "none";
+  const forgotVisible = document.getElementById("forgotForm").style.display !== "none";
+  if (loginVisible)  handleLogin();
+  if (signupVisible) handleSignup();
+  if (forgotVisible) handleForgot();
+});
+</script>
+</body>
+</html>
