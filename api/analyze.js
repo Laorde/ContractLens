@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+const { createClient } = require("@supabase/supabase-js");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -8,7 +8,7 @@ const supabase = createClient(
 // Plan scan limits (must match verify-scan.js and scan.html)
 const PLAN_LIMITS = { free: 2, premium: 30, pro: 100 };
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", process.env.NEXT_PUBLIC_SITE_URL || "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -55,7 +55,6 @@ export default async function handler(req, res) {
   }
 
   const limit = PLAN_LIMITS[profile.plan] ?? PLAN_LIMITS.free;
-  const unlimited = limit === -1;
 
   if (profile.subscription_status === "past_due") {
     return res.status(402).json({
@@ -64,7 +63,7 @@ export default async function handler(req, res) {
     });
   }
 
-  if (!unlimited && scansUsed >= limit) {
+  if (scansUsed >= limit) {
     return res.status(429).json({
       error: "scan_limit_reached",
       plan: profile.plan,
@@ -113,9 +112,8 @@ export default async function handler(req, res) {
       .update({ scans_used: scansUsed + 1 })
       .eq("id", user.id);
 
-    const remaining = unlimited ? null : limit - (scansUsed + 1);
+    const remaining = limit - (scansUsed + 1);
 
-    // Attach usage info to response so frontend can update UI
     return res.status(200).json({
       ...data,
       _usage: {
@@ -123,7 +121,6 @@ export default async function handler(req, res) {
         scans_used: scansUsed + 1,
         scans_limit: limit,
         scans_remaining: remaining,
-        unlimited,
       },
     });
 
@@ -131,4 +128,4 @@ export default async function handler(req, res) {
     console.error("API error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
-}
+};
