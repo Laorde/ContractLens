@@ -268,7 +268,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:16px 3
     <!-- PAYWALL -->
     <div class="paywall" id="paywallBox">
       <h3>No scans remaining this week</h3>
-      <p>Your free scan resets in 7 days. Upgrade to Pro for 30 scans/month or grab a Lifetime deal for $197.</p>
+      <p>You've used your free scans this month. Upgrade to Premium (30 scans) or Pro (100 scans) to continue.</p>
       <button class="btn-gold" onclick="showUpgradeModal()">See Plans</button>
     </div>
 
@@ -325,7 +325,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:16px 3
     <div class="upsell-bar" id="upsellBar" style="display:none">
       <div class="upsell-text">
         <h4>Need more scans?</h4>
-        <p>Upgrade to Pro ($12/mo) or grab a Lifetime deal for $197.</p>
+        <p>Upgrade to Premium ($9.99/mo · 30 scans) or Pro ($19.99/mo · 100 scans).</p>
       </div>
       <button class="btn-gold" onclick="showUpgradeModal()">See Plans</button>
     </div>
@@ -386,8 +386,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:16px 3
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 // ── Supabase init ──────────────────────────────────────────────────────────
-const SUPABASE_URL  = "REPLACE_WITH_YOUR_SUPABASE_URL";
-const SUPABASE_ANON = "REPLACE_WITH_YOUR_SUPABASE_ANON_KEY";
+const SUPABASE_URL  = "https://vsgnqtwrknbrczhtwzhk.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzZ25xdHdya25icmN6aHR3emhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MjM3ODEsImV4cCI6MjA5MTA5OTc4MX0.vAgm-0O8c9nR5jCWOxImfAfFKS8cHHcvxaHUJLk1nhw";
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
