@@ -6,6 +6,7 @@
 <title>ContractLens — Scan Your Contract</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -198,9 +199,11 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:16px 3
   <div class="nav-right">
     <div class="scan-badge" id="scanBadge">
       <div class="scan-dot" id="scanDot"></div>
-      <span class="scan-label" id="scanLabel">1 free scan remaining</span>
+      <span class="scan-label" id="scanLabel">Loading…</span>
     </div>
+    <span id="navUserEmail" style="font-size:11px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
     <button class="btn-gold" onclick="showUpgradeModal()">Upgrade</button>
+    <button onclick="signOut()" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">Sign Out</button>
   </div>
 </nav>
 
@@ -333,80 +336,138 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:16px 3
 </div>
 
 <!-- UPGRADE MODAL -->
-<div id="upgradeModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.88);display:none;align-items:center;justify-content:center;padding:16px">
-  <div style="background:#13131a;border:1px solid var(--border);border-radius:16px;padding:28px;max-width:500px;width:100%">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+<div id="upgradeModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;padding:16px">
+  <div style="background:#13131a;border:1px solid var(--border);border-radius:16px;padding:28px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div style="font-family:'Playfair Display',serif;font-size:18px">Upgrade ContractLens</div>
       <button onclick="hideUpgradeModal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">×</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:20px">Annual plans save ~33%. Cancel anytime.</p>
+
+    <!-- Toggle monthly / annual -->
+    <div style="display:flex;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:4px;margin-bottom:20px;width:fit-content">
+      <button id="toggleMonthly" onclick="setBillingToggle('monthly')" style="padding:6px 18px;border-radius:6px;border:none;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;font-weight:500">Monthly</button>
+      <button id="toggleAnnual" onclick="setBillingToggle('annual')" style="padding:6px 18px;border-radius:6px;border:none;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;background:transparent;color:var(--muted)">Annual <span style="color:var(--green);font-size:10px">Save 33%</span></button>
+    </div>
+
+    <!-- Plan cards -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px" id="planGrid">
+      <!-- Free -->
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center">
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px">Free</div>
         <div style="font-size:22px;font-weight:700;color:var(--text)">$0</div>
-        <div style="font-size:10px;color:var(--gold);margin:6px 0 12px">1 scan/week</div>
-        <div style="font-size:10px;color:var(--border);border:1px solid var(--border);border-radius:5px;padding:7px">Current Plan</div>
+        <div style="font-size:10px;color:var(--gold);margin:6px 0 6px">2 scans/month</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:12px">Full + TL;DR analysis</div>
+        <div style="font-size:11px;color:var(--faint);border:1px solid var(--border);border-radius:5px;padding:7px">Current Plan</div>
       </div>
+      <!-- Premium -->
       <div style="background:#1a1a2e;border:1px solid var(--gold);border-radius:10px;padding:16px;text-align:center;position:relative">
         <div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;font-size:9px;font-weight:500;padding:2px 10px;border-radius:20px;white-space:nowrap">Most Popular</div>
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px">Pro</div>
-        <div style="font-size:22px;font-weight:700;color:var(--text)">$12<span style="font-size:11px;color:var(--muted)">/mo</span></div>
-        <div style="font-size:10px;color:var(--gold);margin:6px 0 12px">30 scans/month</div>
-        <button onclick="joinWaitlist()" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;border:none;padding:8px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer">Join Waitlist</button>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px">Premium</div>
+        <div id="premiumPrice" style="font-size:22px;font-weight:700;color:var(--text)">$9.99<span style="font-size:11px;color:var(--muted)">/mo</span></div>
+        <div style="font-size:10px;color:var(--gold);margin:6px 0 6px">30 scans/month</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:12px">Full + TL;DR analysis</div>
+        <button id="checkout-premium_monthly" onclick="startCheckout(currentBillingCycle === 'annual' ? 'premium_annual' : 'premium_monthly')" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;border:none;padding:8px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer">Upgrade to Premium</button>
       </div>
+      <!-- Pro -->
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center">
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px">Lifetime</div>
-        <div style="font-size:22px;font-weight:700;color:var(--text)">$197</div>
-        <div style="font-size:10px;color:var(--gold);margin:6px 0 12px">Forever</div>
-        <button onclick="joinWaitlist()" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px;border-radius:6px;font-size:11px;cursor:pointer">Join Waitlist</button>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px">Pro</div>
+        <div id="proPrice" style="font-size:22px;font-weight:700;color:var(--text)">$19.99<span style="font-size:11px;color:var(--muted)">/mo</span></div>
+        <div style="font-size:10px;color:var(--gold);margin:6px 0 6px">100 scans/month</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:12px">All features + priority</div>
+        <button id="checkout-pro_monthly" onclick="startCheckout(currentBillingCycle === 'annual' ? 'pro_annual' : 'pro_monthly')" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-size:11px;cursor:pointer;transition:border-color 0.2s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">Upgrade to Pro</button>
       </div>
     </div>
-    <div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:16px">
-      <div style="font-size:12px;color:var(--gold);font-weight:500;margin-bottom:6px">📬 Get early access + founder discount</div>
-      <div style="display:flex;gap:8px">
-        <input type="email" id="modalEmail" placeholder="your@email.com" style="flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:6px;font-size:12px;outline:none;font-family:'DM Sans',sans-serif"/>
-        <button onclick="submitWaitlist()" style="background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;border:none;padding:9px 16px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer" id="waitlistBtn">Notify Me</button>
-      </div>
-      <div id="waitlistSuccess" style="display:none;margin-top:10px;color:var(--green);font-size:12px">🎉 You're on the list! We'll email you when paid plans launch.</div>
-    </div>
+    <p style="font-size:10px;color:var(--faint);text-align:center;margin-top:8px">Secure payment via Stripe · Cancel anytime · Instant access</p>
   </div>
 </div>
 
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+// ── Supabase init ──────────────────────────────────────────────────────────
+const SUPABASE_URL  = "REPLACE_WITH_YOUR_SUPABASE_URL";
+const SUPABASE_ANON = "REPLACE_WITH_YOUR_SUPABASE_ANON_KEY";
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── Plan limits (must match api/analyze.js) ────────────────────────────────
+const PLAN_LIMITS = { free: 2, premium: 30, pro: 100 };
+
 // ── State ──────────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'contractlens_usage';
-const FREE_SCANS = 1;
 let currentFile = null;
 let currentFileType = null;
 let currentTab = 'flags';
 let currentAnalysis = null;
 let scanMode = 'full';
+let userSession = null;
+let userProfile = { plan: 'free', scans_used: 0, scans_limit: 2, scans_remaining: 2, unlimited: false };
+let currentBillingCycle = 'monthly';
 
-// ── Scan tracking ──────────────────────────────────────────────────────────
-function getUsage() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { count: 0, weekStart: Date.now() }; }
-  catch { return { count: 0, weekStart: Date.now() }; }
+// ── Init: auth check + load profile ───────────────────────────────────────
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    window.location.href = '/auth?redirect=/scan';
+    return;
+  }
+  userSession = session;
+
+  // Refresh session token before it expires
+  sb.auth.onAuthStateChange((_event, s) => { userSession = s; });
+
+  const { data: profile } = await sb
+    .from('profiles')
+    .select('plan, billing_cycle, scans_used, scans_reset_at, subscription_status')
+    .eq('id', session.user.id)
+    .single();
+
+  if (profile) {
+    const limit = PLAN_LIMITS[profile.plan] ?? 2;
+    // Reset if new month
+    const resetAt = new Date(profile.scans_reset_at);
+    const now = new Date();
+    const monthsElapsed = (now.getFullYear() - resetAt.getFullYear()) * 12 + (now.getMonth() - resetAt.getMonth());
+    const scansUsed = monthsElapsed >= 1 ? 0 : profile.scans_used;
+
+    userProfile = {
+      plan: profile.plan,
+      billing_cycle: profile.billing_cycle,
+      scans_used: scansUsed,
+      scans_limit: limit,
+      scans_remaining: Math.max(0, limit - scansUsed),
+      unlimited: false,
+      email: session.user.email,
+    };
+  }
+
+  document.getElementById('navUserEmail').textContent = userProfile.email || '';
+  updateScanBadge();
 }
-function saveUsage(u) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(u)); } catch {} }
-function getScansLeft() {
-  let u = getUsage();
-  if (Date.now() - u.weekStart > 604800000) { u = { count: 0, weekStart: Date.now() }; saveUsage(u); }
-  return Math.max(0, FREE_SCANS - u.count);
-}
-function useOneScan() {
-  let u = getUsage();
-  if (Date.now() - u.weekStart > 604800000) u = { count: 0, weekStart: Date.now() };
-  u.count++; saveUsage(u);
-}
+
+// ── Badge update ───────────────────────────────────────────────────────────
 function updateScanBadge() {
-  const n = getScansLeft();
-  document.getElementById('scanDot').className = 'scan-dot' + (n > 0 ? '' : ' empty');
-  document.getElementById('scanLabel').textContent = n > 0 ? `${n} free scan remaining this week` : 'No scans left — upgrade';
+  const dot     = document.getElementById('scanDot');
+  const label   = document.getElementById('scanLabel');
   const paywall = document.getElementById('paywallBox');
-  const btn = document.getElementById('analyzeBtn');
-  if (n === 0) {
+  const btn     = document.getElementById('analyzeBtn');
+  const hasScans = userProfile.scans_remaining > 0;
+
+  dot.className = 'scan-dot' + (hasScans ? '' : ' empty');
+
+  if (hasScans) {
+    label.textContent = `${userProfile.scans_remaining} scan${userProfile.scans_remaining !== 1 ? 's' : ''} left · ${capitalize(userProfile.plan)}`;
+  } else {
+    label.textContent = 'No scans left — upgrade';
+  }
+
+  if (!hasScans) {
     paywall.classList.add('show');
+    paywall.querySelector('h3').textContent = 'No scans remaining this month';
+    paywall.querySelector('p').textContent =
+      userProfile.plan === 'free'
+        ? 'You\'ve used your 2 free scans. Upgrade to Premium (30 scans) or Pro (100 scans).'
+        : `You've used all ${userProfile.scans_limit} scans on your ${capitalize(userProfile.plan)} plan this month.`;
     btn.disabled = true;
     btn.textContent = '🔒 Upgrade to Scan';
   } else {
@@ -414,6 +475,14 @@ function updateScanBadge() {
     btn.disabled = false;
     btn.textContent = '🔍 Analyze Contract';
   }
+}
+
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+// ── Sign out ───────────────────────────────────────────────────────────────
+async function signOut() {
+  await sb.auth.signOut();
+  window.location.href = '/auth';
 }
 
 // ── Input mode ─────────────────────────────────────────────────────────────
@@ -517,15 +586,15 @@ Return this exact structure:
   "summary": "One sentence overview"
 }`;
 
-// ── Analyze ────────────────────────────────────────────────────────────────
+// ── Analyze (auth-gated) ───────────────────────────────────────────────────
 async function analyze() {
-  if (getScansLeft() <= 0) { showUpgradeModal(); return; }
+  if (userProfile.scans_remaining <= 0) { showUpgradeModal(); return; }
+  if (!userSession) { window.location.href = '/auth?redirect=/scan'; return; }
 
   let messages;
   const isTldr = scanMode === 'tldr';
   const system = isTldr ? TLDR_SYSTEM : FULL_SYSTEM;
 
-  // Build message based on input type
   const pasteMode = document.getElementById('pasteMode').style.display !== 'none';
 
   if (pasteMode) {
@@ -561,39 +630,62 @@ async function analyze() {
     return;
   }
 
-  // Show loading
   document.getElementById('inputSection').style.display = 'none';
   const loadingSection = document.getElementById('loadingSection');
   loadingSection.classList.add('show');
 
-  // Animated loading messages
-  const messages_loading = isTldr
+  const loadingMsgs = isTldr
     ? ['Reading your contract...', 'Summarizing key points...', 'Almost done...']
     : ['Reading every clause...', 'Flagging red flags...', 'Analyzing tradeoffs...', 'Building your report...'];
   let msgIdx = 0;
   const msgInterval = setInterval(() => {
-    msgIdx = (msgIdx + 1) % messages_loading.length;
-    document.getElementById('loadingTitle').textContent = messages_loading[msgIdx];
+    msgIdx = (msgIdx + 1) % loadingMsgs.length;
+    document.getElementById('loadingTitle').textContent = loadingMsgs[msgIdx];
   }, 2000);
 
   try {
     const res = await fetch('/api/analyze', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, system, mode: scanMode })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userSession.access_token}`,
+      },
+      body: JSON.stringify({ messages, system, mode: scanMode }),
     });
 
     clearInterval(msgInterval);
 
+    if (res.status === 401) {
+      await sb.auth.signOut();
+      window.location.href = '/auth?redirect=/scan';
+      return;
+    }
+    if (res.status === 429) {
+      loadingSection.classList.remove('show');
+      document.getElementById('inputSection').style.display = 'block';
+      showUpgradeModal();
+      return;
+    }
+    if (res.status === 402) {
+      loadingSection.classList.remove('show');
+      document.getElementById('inputSection').style.display = 'block';
+      alert('Your subscription payment failed. Please update your billing details to continue.');
+      return;
+    }
     if (!res.ok) throw new Error('API error');
+
     const data = await res.json();
     const raw = data.content.map(b => b.text || '').join('');
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-    useOneScan();
+    // Update local usage from server response
+    if (data._usage) {
+      userProfile.scans_used = data._usage.scans_used;
+      userProfile.scans_remaining = Math.max(0, data._usage.scans_limit - data._usage.scans_used);
+    }
+
     updateScanBadge();
     currentAnalysis = analysis;
-
     loadingSection.classList.remove('show');
     renderResults(analysis, isTldr);
 
@@ -649,8 +741,8 @@ function renderResults(a, isTldr) {
     switchTab('flags');
   }
 
-  // Upsell if no scans left
-  if (getScansLeft() === 0) document.getElementById('upsellBar').style.display = 'flex';
+  // Upsell if low/no scans left
+  if (userProfile.scans_remaining <= 0) document.getElementById('upsellBar').style.display = 'flex';
 
   document.getElementById('resultsSection').classList.add('show');
 }
@@ -736,21 +828,89 @@ function showUpgradeModal() {
 function hideUpgradeModal() {
   document.getElementById('upgradeModal').style.display = 'none';
 }
-function joinWaitlist() {
-  document.getElementById('modalEmail').focus();
+function setBillingToggle(cycle) {
+  currentBillingCycle = cycle;
+  const monthly = document.getElementById('toggleMonthly');
+  const annual  = document.getElementById('toggleAnnual');
+  const activeStyle  = 'padding:6px 18px;border-radius:6px;border:none;font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0c0c10;font-weight:500';
+  const inactiveStyle = 'padding:6px 18px;border-radius:6px;border:none;font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;background:transparent;color:var(--muted)';
+  monthly.style.cssText = cycle === 'monthly' ? activeStyle : inactiveStyle;
+  annual.style.cssText  = cycle === 'annual'  ? activeStyle : inactiveStyle;
+
+  // Update displayed prices
+  document.getElementById('premiumPrice').innerHTML =
+    cycle === 'annual'
+      ? '$79.99<span style="font-size:11px;color:var(--muted)">/yr <span style="color:var(--green)">($6.67/mo)</span></span>'
+      : '$9.99<span style="font-size:11px;color:var(--muted)">/mo</span>';
+  document.getElementById('proPrice').innerHTML =
+    cycle === 'annual'
+      ? '$159.99<span style="font-size:11px;color:var(--muted)">/yr <span style="color:var(--green)">($13.33/mo)</span></span>'
+      : '$19.99<span style="font-size:11px;color:var(--muted)">/mo</span>';
 }
-function submitWaitlist() {
-  const email = document.getElementById('modalEmail').value;
-  if (!email.includes('@')) { document.getElementById('modalEmail').style.borderColor = '#ef4444'; return; }
-  document.getElementById('waitlistBtn').textContent = 'Saved!';
-  document.getElementById('waitlistSuccess').style.display = 'block';
+
+// ── Stripe Checkout ────────────────────────────────────────────────────────
+async function startCheckout(planKey) {
+  if (!userSession) { window.location.href = '/auth?redirect=/scan'; return; }
+
+  const btnPremium = document.getElementById('checkout-premium_monthly');
+  const btnPro     = document.getElementById('checkout-pro_monthly');
+  [btnPremium, btnPro].forEach(b => { if (b) { b.disabled = true; b.textContent = 'Redirecting…'; } });
+
+  try {
+    const res = await fetch('/api/create-checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userSession.access_token}`,
+      },
+      body: JSON.stringify({ plan: planKey }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error(data.error || 'No checkout URL returned');
+    }
+  } catch (err) {
+    console.error('Checkout error:', err);
+    [btnPremium, btnPro].forEach(b => {
+      if (b) { b.disabled = false; b.textContent = b.id.includes('premium') ? 'Upgrade to Premium' : 'Upgrade to Pro'; }
+    });
+    alert('Could not start checkout. Please try again.');
+  }
 }
+
 document.getElementById('upgradeModal').addEventListener('click', function(e) {
   if (e.target === this) hideUpgradeModal();
 });
 
+// ── Handle post-checkout redirect ──────────────────────────────────────────
+if (new URLSearchParams(window.location.search).get('upgraded') === '1') {
+  // Reload profile after Stripe redirect
+  setTimeout(async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      userSession = session;
+      const { data: profile } = await sb
+        .from('profiles')
+        .select('plan, billing_cycle, scans_used')
+        .eq('id', session.user.id)
+        .single();
+      if (profile) {
+        const limit = PLAN_LIMITS[profile.plan] ?? 2;
+        userProfile.plan = profile.plan;
+        userProfile.billing_cycle = profile.billing_cycle;
+        userProfile.scans_used = profile.scans_used;
+        userProfile.scans_limit = limit;
+        userProfile.scans_remaining = Math.max(0, limit - profile.scans_used);
+        updateScanBadge();
+      }
+    }
+  }, 1500); // small delay to let webhook process
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────
-updateScanBadge();
+init();
 </script>
 </body>
 </html>
