@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/scan",    "destination": "/public/scan.html" },
     { "source": "/auth",    "destination": "/public/auth.html" },
+    { "source": "/account", "destination": "/public/account.html" },
     { "source": "/terms",   "destination": "/public/terms.html" },
     { "source": "/privacy", "destination": "/public/privacy.html" },
     { "source": "/",        "destination": "/public/index.html" }
