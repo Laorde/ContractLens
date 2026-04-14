@@ -64,12 +64,18 @@ module.exports = async function handler(req, res) {
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/scan?upgraded=1`,
     cancel_url:  `${process.env.NEXT_PUBLIC_SITE_URL}/scan`,
+    // Pass user ID in BOTH places so webhook can always find it
+    metadata: {
+      supabase_user_id: user.id,
+      plan_key: plan,
+    },
     subscription_data: {
       metadata: {
         supabase_user_id: user.id,
         plan_key: plan,
       },
     },
+    automatic_tax: { enabled: true },
     allow_promotion_codes: true,
   });
 
