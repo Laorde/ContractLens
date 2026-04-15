@@ -136,15 +136,10 @@ footer a:hover{color:var(--muted)}
   <!-- Change Password -->
   <div class="card">
     <div class="card-title">Change Password</div>
-    <div class="field">
-      <label for="newPassword">New password</label>
-      <input type="password" id="newPassword" placeholder="Min. 8 characters"/>
-    </div>
-    <div class="field">
-      <label for="confirmPassword">Confirm new password</label>
-      <input type="password" id="confirmPassword" placeholder="Repeat new password"/>
-    </div>
-    <button class="btn-full btn-primary" id="changePassBtn" onclick="changePassword()">Update Password</button>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+      We'll send a password reset link to your email address.
+    </p>
+    <button class="btn-full btn-primary" id="changePassBtn" onclick="sendPasswordReset()">Send Reset Email</button>
     <div class="msg" id="passMsg"></div>
   </div>
 
@@ -160,12 +155,6 @@ footer a:hover{color:var(--muted)}
     <div class="msg" id="billingMsg"></div>
   </div>
 
-  <!-- Danger Zone -->
-  <div class="card danger-zone">
-    <div class="card-title">Sign Out</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Sign out of your account on this device.</p>
-    <button class="btn-full btn-danger" onclick="signOut()" style="padding:11px;font-size:13px">Sign Out</button>
-  </div>
 
 </div>
 
@@ -247,29 +236,23 @@ async function init() {
   }
 }
 
-async function changePassword() {
-  const newPass = document.getElementById('newPassword').value;
-  const confirm = document.getElementById('confirmPassword').value;
-  const btn     = document.getElementById('changePassBtn');
-  const msg     = document.getElementById('passMsg');
-
-  msg.className = 'msg';
-  if (!newPass || !confirm) return showMsg('passMsg', 'Please fill in both fields.', 'error');
-  if (newPass.length < 8)    return showMsg('passMsg', 'Password must be at least 8 characters.', 'error');
-  if (newPass !== confirm)   return showMsg('passMsg', 'Passwords don\'t match.', 'error');
+async function sendPasswordReset() {
+  const btn = document.getElementById('changePassBtn');
+  const email = userSession && userSession.user && userSession.user.email;
+  if (!email) return showMsg('passMsg', 'Could not find your email. Try signing out and back in.', 'error');
 
   btn.disabled = true;
-  btn.textContent = 'Updating...';
+  btn.textContent = 'Sending...';
 
-  const { error } = await sb.auth.updateUser({ password: newPass });
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/account',
+  });
 
   btn.disabled = false;
-  btn.textContent = 'Update Password';
+  btn.textContent = 'Send Reset Email';
 
   if (error) return showMsg('passMsg', error.message, 'error');
-  showMsg('passMsg', 'Password updated successfully.', 'success');
-  document.getElementById('newPassword').value = '';
-  document.getElementById('confirmPassword').value = '';
+  showMsg('passMsg', 'Reset link sent! Check your email.', 'success');
 }
 
 async function openBillingPortal() {
