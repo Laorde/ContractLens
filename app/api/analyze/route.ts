@@ -15,8 +15,7 @@ if (!supabaseServiceKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
-const PLAN_LIMITS: Record<string, number> = { free: 2, premium: 30, pro: 100 }
-S
+const PLAN_LIMITS: Record<string, number> = { free: 2, premium: 30, pro: 100 } 
 export async function POST(req: Request) {
   const token = (req.headers.get('authorization') || '').replace('Bearer ', '').trim()
   if (!token) return NextResponse.json({ error: 'auth_required', message: 'Please sign in.' }, { status: 401 })
