@@ -1,16 +1,33 @@
 {
-  "name": "contractlens",
+  "name": "contractlens-next-tailwind",
   "version": "1.0.0",
-  "description": "",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "@supabase/supabase-js": "^2.0.0",
-    "stripe": "^14.0.0"
+    "@anthropic-ai/sdk": "latest",
+    "@supabase/supabase-js": "latest",
+    "@tailwindcss/postcss": "^4.3.0",
+    "lucide-react": "latest",
+    "next": "latest",
+    "pdfjs-dist": "3.11.174",
+    "react": "latest",
+    "react-dom": "latest",
+    "stripe": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "autoprefixer": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "postcss": "latest",
+    "tailwindcss": "latest",
+    "typescript": "latest"
   }
 }
