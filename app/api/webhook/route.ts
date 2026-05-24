@@ -2,9 +2,24 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2026-04-22.dahlia',
+})
 
+const supabaseUrl =
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl) {
+  throw new Error('Missing SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL')
+}
+
+if (!supabaseServiceKey) {
+  throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY')
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
 function resolvePlan(priceId?: string | null) {
   const map: Record<string, { plan: string; billing_cycle: string | null }> = {
     [process.env.STRIPE_PRICE_PREMIUM_MONTHLY || '']: { plan: 'premium', billing_cycle: 'monthly' },
