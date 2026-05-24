@@ -29,9 +29,6 @@ export default function HomePage() {
             <Link href="/auth?mode=signup" className="btn-gold px-7 py-3">Get Early Access — Free</Link>
             <Link href="#how-it-works" className="btn-outline px-7 py-3">See How It Works</Link>
           </div>
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-3 text-xs text-muted">
-            <span>🔒 No account needed to try</span><span>•</span><span>2 free scans/month</span><span>•</span><span>Works on any contract type</span>
-          </div>
         </section>
 
         <section id="how-it-works" className="border-y border-line bg-panel px-6 py-24">
@@ -69,16 +66,54 @@ export default function HomePage() {
         <section id="pricing" className="px-6 py-24">
           <div className="mx-auto max-w-6xl">
             <span className="text-xs uppercase tracking-[0.14em] text-gold">Pricing</span>
-            <h2 className="mt-4 font-serif text-4xl font-bold">Simple, honest pricing</h2>
-            <div className="mt-10 grid max-w-4xl gap-4 md:grid-cols-3">
-              {[['Free', '$0', '2 scans/month'], ['Premium', '$9.99', '30 scans/month'], ['Pro', '$19.99', '100 scans/month']].map(([tier, price, desc], i) => (
-                <div key={tier} className={`card p-7 ${i === 1 ? 'border-gold bg-gradient-to-br from-panel2 to-panel' : ''}`}>
-                  <div className="text-xs uppercase tracking-widest text-muted">{tier}</div>
-                  <div className="mt-3 font-serif text-4xl font-bold">{price}</div>
-                  <div className="mt-2 text-sm text-gold">{desc}</div>
-                  <Link href="/auth?mode=signup" className={i === 1 ? 'btn-gold mt-8 w-full' : 'btn-outline mt-8 w-full'}>Get Started</Link>
-                </div>
-              ))}
+            <h2 className="mt-4 font-serif text-4xl font-bold md:text-6xl">Simple, honest pricing</h2>
+
+            <div className="mt-14 grid gap-8 md:grid-cols-3">
+              {[
+                ['Free', '$0', '2 scans/month'],
+                ['Premium', '$9.99', '30 scans/month'],
+                ['Pro', '$19.99', '100 scans/month']
+              ].map(([tier, price, desc], i) => {
+                const featured = i === 1
+
+                return (
+                  <div
+                    key={tier}
+                    className={`relative rounded-3xl border p-8 transition-all duration-300 ${
+                      featured
+                        ? 'border-gold bg-gradient-to-b from-[#161616] to-[#0b0b0f] shadow-[0_0_50px_rgba(201,168,76,0.2)]'
+                        : 'border-white/10 bg-[#0f1014] hover:border-gold/40'
+                    }`}
+                  >
+                    {featured && (
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-gold px-4 py-1 text-xs font-semibold text-black">
+                        ★ MOST POPULAR
+                      </div>
+                    )}
+
+                    <div className="text-center text-sm uppercase tracking-[0.2em] text-gold">{tier}</div>
+                    <div className="mt-5 text-center font-serif text-6xl font-black text-paper">{price}</div>
+                    <div className="mt-4 text-center text-lg text-muted">{desc}</div>
+
+                    <div className="mt-8 space-y-3 text-sm text-muted">
+                      <div>✓ AI contract analysis</div>
+                      <div>✓ Plain-English summaries</div>
+                      <div>✓ Risk flag detection</div>
+                    </div>
+
+                    <Link
+                      href="/auth?mode=signup"
+                      className={`mt-10 flex w-full items-center justify-center rounded-2xl py-4 text-lg font-semibold transition-all ${
+                        featured
+                          ? 'bg-gold text-black hover:opacity-90'
+                          : 'border border-gold/40 bg-black/40 text-gold hover:bg-gold hover:text-black'
+                      }`}
+                    >
+                      Get Started →
+                    </Link>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </section>
