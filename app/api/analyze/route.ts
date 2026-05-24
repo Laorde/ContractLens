@@ -1,9 +1,22 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-const PLAN_LIMITS: Record<string, number> = { free: 2, premium: 30, pro: 100 }
+const supabaseUrl =
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
 
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl) {
+  throw new Error('Missing SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL')
+}
+
+if (!supabaseServiceKey) {
+  throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY')
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const PLAN_LIMITS: Record<string, number> = { free: 2, premium: 30, pro: 100 }
+S
 export async function POST(req: Request) {
   const token = (req.headers.get('authorization') || '').replace('Bearer ', '').trim()
   if (!token) return NextResponse.json({ error: 'auth_required', message: 'Please sign in.' }, { status: 401 })
