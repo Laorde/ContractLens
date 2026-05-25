@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
@@ -12,16 +14,35 @@ const features = [
 ]
 
 export default function HomePage() {
+  async function startCheckout(plan: string) {
+    if (plan === 'free') {
+      window.location.href = '/auth?mode=signup'
+      return
+    }
+
+    const res = await fetch('/api/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan }),
+    })
+
+    const data = await res.json()
+
+    if (data.url) {
+      window.location.href = data.url
+    } else {
+      alert(data.error || 'Could not start checkout.')
+    }
+  }
+
   return (
     <>
       <Navbar />
 
       <main className="relative z-10 overflow-hidden">
-
         <div className="absolute left-1/2 top-20 -z-10 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-[#c9a84c]/10 blur-[140px]" />
 
         <section className="relative flex min-h-[88vh] flex-col items-center justify-center px-6 py-20 text-center">
-
           <div className="rounded-full border border-[#c9a84c]/30 bg-[#c9a84c]/10 px-5 py-2 text-xs uppercase tracking-[0.2em] text-[#c9a84c]">
             ⚖️ AI-Powered Contract Analysis
           </div>
@@ -41,7 +62,6 @@ export default function HomePage() {
           </p>
 
           <div className="mt-10 flex flex-wrap justify-center gap-4">
-
             <Link
               href="/auth?mode=signup"
               className="rounded-2xl bg-gradient-to-r from-[#c9a84c] to-[#8b6914] px-8 py-4 text-lg font-bold text-black shadow-[0_0_35px_rgba(201,168,76,0.35)] transition-all hover:scale-[1.02] hover:shadow-[0_0_55px_rgba(201,168,76,0.55)]"
@@ -55,17 +75,12 @@ export default function HomePage() {
             >
               View Pricing
             </Link>
-
           </div>
-
         </section>
 
         <section className="px-6 py-24">
-
           <div className="mx-auto max-w-6xl">
-
             <div className="mb-14">
-
               <div className="text-xs uppercase tracking-[0.2em] text-[#c9a84c]">
                 Features
               </div>
@@ -73,20 +88,15 @@ export default function HomePage() {
               <h2 className="mt-4 font-serif text-5xl font-black text-[#f3efe7]">
                 Understand contracts instantly
               </h2>
-
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-
               {features.map(([icon, title, desc]) => (
                 <div
                   key={title}
                   className="rounded-[28px] border border-[#23232d] bg-[#111118] p-8 transition-all hover:border-[#c9a84c]/40 hover:shadow-[0_0_35px_rgba(201,168,76,0.08)]"
                 >
-
-                  <div className="mb-5 text-5xl">
-                    {icon}
-                  </div>
+                  <div className="mb-5 text-5xl">{icon}</div>
 
                   <h3 className="text-2xl font-bold text-[#f3efe7]">
                     {title}
@@ -95,22 +105,15 @@ export default function HomePage() {
                   <p className="mt-4 leading-8 text-[#8b8b99]">
                     {desc}
                   </p>
-
                 </div>
               ))}
-
             </div>
-
           </div>
-
         </section>
 
         <section id="pricing" className="px-6 py-24">
-
           <div className="mx-auto max-w-6xl">
-
             <div className="mb-14 text-center">
-
               <div className="text-xs uppercase tracking-[0.2em] text-[#c9a84c]">
                 Pricing
               </div>
@@ -118,17 +121,14 @@ export default function HomePage() {
               <h2 className="mt-4 font-serif text-6xl font-black text-[#f3efe7]">
                 Simple pricing
               </h2>
-
             </div>
 
             <div className="grid gap-8 md:grid-cols-3">
-
               {[
-                ['Free', '$0', '2 scans/month'],
-                ['Premium', '$9.99', '30 scans/month'],
-                ['Pro', '$19.99', '100 scans/month']
-              ].map(([tier, price, desc], i) => {
-
+                ['Free', '$0', '2 scans/month', 'free'],
+                ['Premium', '$9.99', '30 scans/month', 'premium'],
+                ['Pro', '$19.99', '100 scans/month', 'pro']
+              ].map(([tier, price, desc, plan], i) => {
                 const featured = i === 1
 
                 return (
@@ -140,7 +140,6 @@ export default function HomePage() {
                         : 'border-[#23232d] bg-[#111118] hover:border-[#c9a84c]/40'
                     }`}
                   >
-
                     {featured && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-[#c9a84c] px-4 py-1 text-xs font-bold text-black">
                         MOST POPULAR
@@ -160,15 +159,13 @@ export default function HomePage() {
                     </div>
 
                     <div className="mt-8 space-y-3 text-sm text-[#b4b4c2]">
-
                       <div>✓ AI contract analysis</div>
                       <div>✓ Plain-English summaries</div>
                       <div>✓ Risk flag detection</div>
-
                     </div>
 
-                    <Link
-                      href="/auth?mode=signup"
+                    <button
+                      onClick={() => startCheckout(plan)}
                       className={`mt-10 flex w-full items-center justify-center rounded-2xl py-4 text-lg font-bold transition-all ${
                         featured
                           ? 'bg-gradient-to-r from-[#c9a84c] to-[#8b6914] text-black hover:opacity-90'
@@ -176,18 +173,13 @@ export default function HomePage() {
                       }`}
                     >
                       Get Started →
-                    </Link>
-
+                    </button>
                   </div>
                 )
               })}
-
             </div>
-
           </div>
-
         </section>
-
       </main>
 
       <Footer />
