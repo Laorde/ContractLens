@@ -5,7 +5,18 @@ import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
 import { supabase } from '@/lib/supabaseClient'
 
-const FULL_SYSTEM = `You are an expert contract attorney and consumer advocate. Analyze contracts and return ONLY valid JSON.`
+const FULL_SYSTEM = `You are an expert contract attorney and consumer advocate. Analyze contracts and return ONLY valid JSON.
+
+Return this exact JSON structure:
+{
+  "summary": "2-3 sentence plain-English overview",
+  "overallRisk": "LOW | MEDIUM | HIGH | CRITICAL",
+  "riskScore": 0,
+  "tldr": ["short bullet", "short bullet", "short bullet"],
+  "keyTerms": [{"term": "term name", "explanation": "plain English meaning"}],
+  "redFlags": [{"title": "issue", "severity": "LOW | MEDIUM | HIGH | CRITICAL", "description": "why it matters"}],
+  "recommendations": ["actionable recommendation"]
+}`
 
 export default function ScanPage() {
   const router = useRouter()
@@ -212,7 +223,44 @@ await supabase.from('scans').insert({
               <p className="mt-6 leading-8 text-[#b4b4c2]">
                 {result.summary}
               </p>
+{result.tldr?.length ? (
+  <div className="mt-8 rounded-[28px] border border-[#23232d] bg-[#111118] p-8">
+    <h3 className="text-xl font-bold text-[#c9a84c]">
+      TL;DR
+    </h3>
 
+    <ul className="mt-4 space-y-3 text-[#b4b4c2]">
+      {result.tldr.map((item: string, i: number) => (
+        <li key={i}>• {item}</li>
+      ))}
+    </ul>
+  </div>
+) : null}
+
+{result.redFlags?.length ? (
+  <div className="mt-8 rounded-[28px] border border-[#23232d] bg-[#111118] p-8">
+    <h3 className="text-xl font-bold text-[#c9a84c]">
+      Red Flags
+    </h3>
+
+    <div className="mt-4 space-y-4">
+      {result.redFlags.map((flag: any, i: number) => (
+        <div
+          key={i}
+          className="rounded-2xl border border-[#2a2a35] bg-[#09090c] p-5"
+        >
+          <div className="font-bold text-[#f3efe7]">
+            {flag.severity}: {flag.title}
+          </div>
+
+          <p className="mt-2 text-[#8b8b99]">
+            {flag.description}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+) : null}
             </div>
 
           </div>
