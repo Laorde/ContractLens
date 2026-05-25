@@ -62,9 +62,16 @@ export default function ScanPage() {
     const raw =
       data.content?.map((b: any) => b.text || '').join('') || '{}'
 
-    setResult(
-      JSON.parse(raw.replace(/```json|```/g, '').trim())
-    )
+    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
+
+setResult(parsed)
+
+await supabase.from('scans').insert({
+  user_id: session.user.id,
+  title: text.slice(0, 80),
+  result: parsed
+})
+    
   }
 
   return (
