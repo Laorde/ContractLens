@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
+import { supabase } from '@/lib/supabaseClient'
 
 const features = [
   ['🚩', 'Red Flag Detection', 'Suspicious clauses are flagged with severity ratings so you know what needs attention.'],
@@ -20,9 +21,21 @@ export default function HomePage() {
       return
     }
 
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      window.location.href = `/auth?mode=signup&plan=${plan}`
+      return
+    }
+
     const res = await fetch('/api/create-checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
       body: JSON.stringify({ plan }),
     })
 
@@ -31,7 +44,7 @@ export default function HomePage() {
     if (data.url) {
       window.location.href = data.url
     } else {
-      alert(data.error || 'Could not start checkout.')
+      alert(data.error || data.message || 'Could not start checkout.')
     }
   }
 
@@ -64,7 +77,7 @@ export default function HomePage() {
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link
               href="/auth?mode=signup"
-              className="rounded-2xl bg-gradient-to-r from-[#c9a84c] to-[#8b6914] px-8 py-4 text-lg font-bold text-black shadow-[0_0_35px_rgba(201,168,76,0.35)] transition-all hover:scale-[1.02] hover:shadow-[0_0_55px_rgba(201,168,76,0.55)]"
+              className="rounded-2xl bg-gradient-to-r from-[#c9a84c] to-[#8b6914] px-8 py-4 text-lg font-bold text-black shadow-[0_0_35px_rgba(201,168,76,0.35)] transition-all hover:scale-[1.02]"
             >
               Get Started →
             </Link>
@@ -94,17 +107,11 @@ export default function HomePage() {
               {features.map(([icon, title, desc]) => (
                 <div
                   key={title}
-                  className="rounded-[28px] border border-[#23232d] bg-[#111118] p-8 transition-all hover:border-[#c9a84c]/40 hover:shadow-[0_0_35px_rgba(201,168,76,0.08)]"
+                  className="rounded-[28px] border border-[#23232d] bg-[#111118] p-8 transition-all hover:border-[#c9a84c]/40"
                 >
                   <div className="mb-5 text-5xl">{icon}</div>
-
-                  <h3 className="text-2xl font-bold text-[#f3efe7]">
-                    {title}
-                  </h3>
-
-                  <p className="mt-4 leading-8 text-[#8b8b99]">
-                    {desc}
-                  </p>
+                  <h3 className="text-2xl font-bold text-[#f3efe7]">{title}</h3>
+                  <p className="mt-4 leading-8 text-[#8b8b99]">{desc}</p>
                 </div>
               ))}
             </div>
