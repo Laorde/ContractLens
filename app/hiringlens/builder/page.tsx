@@ -7,20 +7,86 @@ import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
 
 const SECTORS = [
+  // Professional & Corporate
   'Technology / Software',
-  'Healthcare / Medical',
   'Finance / Banking',
-  'Marketing / Advertising',
   'Legal / Law',
-  'Engineering',
-  'Sales / Business Development',
-  'Education / Academia',
-  'Operations / Supply Chain',
   'Consulting / Strategy',
   'Human Resources',
+  'Marketing / Advertising',
+  'Sales / Business Development',
+  'Engineering',
+  'Architecture / Urban Planning',
+  'Accounting / Auditing',
+  'Insurance',
   'Real Estate',
+
+  // Healthcare & Science
+  'Healthcare / Medical',
+  'Nursing / Patient Care',
+  'Pharmacy',
+  'Dentistry',
+  'Mental Health / Counseling',
+  'Biotech / Life Sciences',
+  'Environmental Science',
+  'Research & Development',
+
+  // Trades & Labor
+  'Construction / Contracting',
+  'Electrical / Plumbing',
+  'HVAC / Mechanical',
+  'Manufacturing / Assembly',
+  'Welding / Fabrication',
+  'Automotive / Mechanics',
+  'Carpentry / Woodworking',
+
+  // Agriculture & Outdoors
+  'Agriculture / Farming',
+  'Horticulture / Landscaping',
+  'Forestry / Conservation',
+  'Veterinary / Animal Care',
+  'Food Production / Processing',
+  'Fishing / Aquaculture',
+
+  // Service & Hospitality
   'Retail / E-commerce',
+  'Food Service / Restaurant',
+  'Hospitality / Hotels',
+  'Tourism / Travel',
+  'Childcare / Early Education',
+  'Elder Care / Home Health',
+  'Cleaning / Janitorial',
+  'Security / Loss Prevention',
+
+  // Creative & Media
   'Media / Entertainment',
+  'Graphic Design / Visual Arts',
+  'Photography / Videography',
+  'Writing / Journalism',
+  'Music / Performing Arts',
+  'Gaming / Animation',
+  'Fashion / Apparel',
+
+  // Education & Public Service
+  'Education / Academia',
+  'Social Work / Nonprofits',
+  'Government / Public Administration',
+  'Military / Defense',
+  'Law Enforcement / Corrections',
+  'Firefighting / Emergency Services',
+
+  // Logistics & Transport
+  'Operations / Supply Chain',
+  'Warehouse / Fulfillment',
+  'Trucking / Delivery',
+  'Aviation / Aerospace',
+  'Maritime / Shipping',
+
+  // Entry Level / General
+  'Customer Service / Call Center',
+  'Administrative / Office Support',
+  'Data Entry / Clerical',
+  'General Labor',
 ]
 
 export default function HiringLensBuilderPage() {
