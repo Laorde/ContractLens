@@ -14,8 +14,13 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
 
 const PRICE_IDS: Record<string, string | undefined> = {
+  premium_monthly: process.env.STRIPE_PRICE_PREMIUM_MONTHLY,
+  premium_annual:  process.env.STRIPE_PRICE_PREMIUM_ANNUAL,
+  pro_monthly:     process.env.STRIPE_PRICE_PRO_MONTHLY,
+  pro_annual:      process.env.STRIPE_PRICE_PRO_ANNUAL,
+  // legacy keys kept for compatibility
   premium: process.env.STRIPE_PRICE_PREMIUM_MONTHLY,
-  pro: process.env.STRIPE_PRICE_PRO_MONTHLY,
+  pro:     process.env.STRIPE_PRICE_PRO_MONTHLY,
 }
 
 export async function POST(req: Request) {
@@ -90,6 +95,8 @@ export async function POST(req: Request) {
       },
     },
     allow_promotion_codes: true,
+    automatic_tax: { enabled: true },
+    customer_update: { address: 'auto' },
   })
 
   return NextResponse.json({ url: checkoutSession.url })
