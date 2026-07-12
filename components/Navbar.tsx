@@ -38,8 +38,12 @@ export function Navbar({ simple = false }: { simple?: boolean }) {
               Pricing
             </Link>
 
-            <Link className="text-sm text-[#8b8b99] hover:text-[#f3efe7]" href="/hiringlens">
+            <Link
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold text-emerald-400 transition-all hover:border-emerald-400/60 hover:bg-emerald-500/20"
+              href="/hiringlens"
+            >
               HiringLens
+              <span className="rounded-full bg-emerald-400/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300">NEW</span>
             </Link>
           </>
         )}

@@ -9,8 +9,10 @@ export default function AccountPage() {
   const router = useRouter()
 
   const [user, setUser] = useState<any>(null)
+  const [session, setSession] = useState<any>(null)
   const [scans, setScans] = useState<any[]>([])
   const [selectedScan, setSelectedScan] = useState<any>(null)
+  const [billingLoading, setBillingLoading] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -21,6 +23,7 @@ export default function AccountPage() {
         return
       }
 
+      setSession(session)
       setUser(session.user)
 
       const { data } = await supabase
@@ -84,10 +87,33 @@ export default function AccountPage() {
               </button>
 
               <button
-                onClick={() => router.push('/api/billing-portal')}
-                className="rounded-xl border border-[#c9a84c]/40 bg-[#0b0b10] px-5 py-3 font-semibold text-[#c9a84c] hover:bg-[#c9a84c] hover:text-black"
+                disabled={billingLoading}
+                onClick={async () => {
+                  if (!session) return
+                  setBillingLoading(true)
+                  try {
+                    const res = await fetch('/api/billing-portal', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${session.access_token}`,
+                      },
+                    })
+                    const data = await res.json()
+                    if (data.url) {
+                      window.location.href = data.url
+                    } else {
+                      alert(data.error || 'Could not open billing portal.')
+                    }
+                  } catch {
+                    alert('Network error. Please try again.')
+                  } finally {
+                    setBillingLoading(false)
+                  }
+                }}
+                className="rounded-xl border border-[#c9a84c]/40 bg-[#0b0b10] px-5 py-3 font-semibold text-[#c9a84c] hover:bg-[#c9a84c] hover:text-black disabled:opacity-50"
               >
-                Manage Billing
+                {billingLoading ? 'Opening...' : 'Manage Billing'}
               </button>
 
               <button

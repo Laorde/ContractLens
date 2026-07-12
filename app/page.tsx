@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
 import { supabase } from '@/lib/supabaseClient'
@@ -15,6 +16,8 @@ const features = [
 ]
 
 export default function HomePage() {
+  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
+
   async function startCheckout(plan: string) {
     if (plan === 'free') {
       window.location.href = '/auth?mode=signup'
@@ -120,24 +123,51 @@ export default function HomePage() {
 
         <section id="pricing" className="px-6 py-24">
           <div className="mx-auto max-w-6xl">
-            <div className="mb-14 text-center">
-              <div className="text-xs uppercase tracking-[0.2em] text-[#c9a84c]">
-                Pricing
-              </div>
+            <div className="mb-10 text-center">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#c9a84c]">Pricing</div>
+              <h2 className="mt-4 font-serif text-6xl font-black text-[#f3efe7]">Simple pricing</h2>
+            </div>
 
-              <h2 className="mt-4 font-serif text-6xl font-black text-[#f3efe7]">
-                Simple pricing
-              </h2>
+            {/* Billing toggle */}
+            <div className="mb-12 flex justify-center">
+              <div className="flex items-center gap-3 rounded-2xl border border-[#23232d] bg-[#111118] p-1.5">
+                <button
+                  onClick={() => setBilling('monthly')}
+                  className={`rounded-xl px-6 py-2.5 text-sm font-semibold transition-all ${billing === 'monthly' ? 'bg-[#c9a84c] text-black' : 'text-[#8b8b99] hover:text-[#f3efe7]'}`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setBilling('annual')}
+                  className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all ${billing === 'annual' ? 'bg-[#c9a84c] text-black' : 'text-[#8b8b99] hover:text-[#f3efe7]'}`}
+                >
+                  Annual
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${billing === 'annual' ? 'bg-black/20 text-black' : 'bg-[#c9a84c]/20 text-[#c9a84c]'}`}>
+                    Save 33%
+                  </span>
+                </button>
+              </div>
             </div>
 
             <div className="grid gap-8 md:grid-cols-3">
               {[
-                ['Free', '$0', '2 scans/month', 'free'],
-                ['Premium', '$9.99', '30 scans/month', 'premium'],
-                ['Pro', '$19.99', '100 scans/month', 'pro']
-              ].map(([tier, price, desc, plan], i) => {
-                const featured = i === 1
-
+                {
+                  tier: 'Free', featured: false, plan: 'free',
+                  monthly: { price: '$0', sub: '2 scans/month' },
+                  annual:  { price: '$0', sub: '2 scans/month' },
+                },
+                {
+                  tier: 'Premium', featured: true, plan: billing === 'monthly' ? 'premium_monthly' : 'premium_annual',
+                  monthly: { price: '$9.99', sub: '30 scans/month' },
+                  annual:  { price: '$79.99', sub: '30 scans/month · $6.67/mo' },
+                },
+                {
+                  tier: 'Pro', featured: false, plan: billing === 'monthly' ? 'pro_monthly' : 'pro_annual',
+                  monthly: { price: '$19.99', sub: '100 scans/month' },
+                  annual:  { price: '$159.99', sub: '100 scans/month · $13.33/mo' },
+                },
+              ].map(({ tier, featured, plan, monthly, annual }) => {
+                const info = billing === 'annual' ? annual : monthly
                 return (
                   <div
                     key={tier}
@@ -153,17 +183,17 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    <div className="text-center text-sm uppercase tracking-[0.2em] text-[#c9a84c]">
-                      {tier}
-                    </div>
+                    <div className="text-center text-sm uppercase tracking-[0.2em] text-[#c9a84c]">{tier}</div>
 
                     <div className="mt-5 text-center font-serif text-6xl font-black text-[#f3efe7]">
-                      {price}
+                      {info.price}
                     </div>
 
-                    <div className="mt-4 text-center text-lg text-[#8b8b99]">
-                      {desc}
+                    <div className="mt-1 text-center text-xs text-[#c9a84c]">
+                      {billing === 'annual' && tier !== 'Free' ? 'per year' : tier !== 'Free' ? 'per month' : ''}
                     </div>
+
+                    <div className="mt-3 text-center text-sm text-[#8b8b99]">{info.sub}</div>
 
                     <div className="mt-8 space-y-3 text-sm text-[#b4b4c2]">
                       <div>✓ AI contract analysis</div>
