@@ -94,6 +94,9 @@ export default function HiringLensBuilderPage() {
   const outputRef = useRef<HTMLDivElement>(null)
 
   const [session, setSession] = useState<any>(null)
+  const [credits, setCredits] = useState<number | null>(null)
+  const [isPaid, setIsPaid] = useState(false)
+  const [buyingCredits, setBuyingCredits] = useState(false)
   const [planError, setPlanError] = useState(false)
   const [mode, setMode] = useState<'optimize' | 'build'>('optimize')
   const [sector, setSector] = useState('')
@@ -116,14 +119,51 @@ export default function HiringLensBuilderPage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) {
         router.push('/auth?redirect=/hiringlens/builder')
-      } else {
-        setSession(data.session)
+        return
+      }
+      setSession(data.session)
+
+      // Load profile for credits/plan
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan, resume_credits')
+        .eq('id', data.session.user.id)
+        .single()
+
+      const plan = profile?.plan || 'free'
+      setIsPaid(plan === 'premium' || plan === 'pro')
+      setCredits(profile?.resume_credits || 0)
+
+      // Check for credits=1 param (returned from successful purchase)
+      if (typeof window !== 'undefined' && window.location.search.includes('credits=1')) {
+        window.history.replaceState({}, '', '/hiringlens/builder')
       }
     })
   }, [router])
+
+  async function buyCredits() {
+    if (!session) return
+    setBuyingCredits(true)
+    try {
+      const res = await fetch('/api/create-resume-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+      else alert(data.error || 'Could not start checkout.')
+    } catch {
+      alert('Network error. Please try again.')
+    } finally {
+      setBuyingCredits(false)
+    }
+  }
 
   async function generate() {
     setError('')
@@ -162,7 +202,7 @@ export default function HiringLensBuilderPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        if (res.status === 402 && data.error === 'upgrade_required') {
+        if (data.error === 'no_credits') {
           setPlanError(true)
         } else {
           setError(data.message || data.error || 'Something went wrong. Please try again.')
@@ -170,6 +210,9 @@ export default function HiringLensBuilderPage() {
         return
       }
 
+      if (data.credits_remaining !== null && data.credits_remaining !== undefined) {
+        setCredits(data.credits_remaining)
+      }
       setResume(data.resume)
       setTimeout(() => outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } catch {
@@ -240,15 +283,40 @@ export default function HiringLensBuilderPage() {
             </p>
           </div>
 
-          {/* Upgrade wall */}
+          {/* Credit counter for free users */}
+          {!isPaid && credits !== null && (
+            <div className="mb-6 flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+              <div className="text-sm text-slate-400">
+                Resume credits: <span className={`font-bold ${credits === 0 ? 'text-red-400' : 'text-emerald-400'}`}>{credits} remaining</span>
+              </div>
+              <button
+                onClick={buyCredits}
+                disabled={buyingCredits}
+                className="rounded-xl bg-emerald-400 px-4 py-2 text-xs font-bold text-black hover:bg-emerald-300 disabled:opacity-50"
+              >
+                {buyingCredits ? 'Loading...' : '+ Buy 5 credits — $3.99'}
+              </button>
+            </div>
+          )}
+
+          {/* No credits wall */}
           {planError && (
             <div className="mb-8 rounded-[28px] border border-emerald-400/20 bg-emerald-400/5 p-8 text-center">
-              <div className="mb-3 text-4xl">🔒</div>
-              <h2 className="mb-2 text-xl font-bold text-white">Premium or Pro required</h2>
-              <p className="mb-6 text-slate-400">The resume builder is available on paid plans. Upgrade to unlock it.</p>
-              <a href="/pricing" className="inline-block rounded-xl bg-emerald-400 px-8 py-3 font-semibold text-black hover:bg-emerald-300">
-                View Plans →
-              </a>
+              <div className="mb-3 text-4xl">✍️</div>
+              <h2 className="mb-2 text-xl font-bold text-white">No credits left</h2>
+              <p className="mb-6 text-slate-400">Buy a credit pack to keep generating resumes, or upgrade to Premium for unlimited access.</p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <button
+                  onClick={buyCredits}
+                  disabled={buyingCredits}
+                  className="rounded-xl bg-emerald-400 px-8 py-3 font-semibold text-black hover:bg-emerald-300 disabled:opacity-50"
+                >
+                  {buyingCredits ? 'Loading...' : 'Buy 5 Credits — $3.99'}
+                </button>
+                <a href="/#pricing" className="rounded-xl border border-white/10 px-8 py-3 font-semibold text-white hover:border-emerald-400/50">
+                  View Plans →
+                </a>
+              </div>
             </div>
           )}
 

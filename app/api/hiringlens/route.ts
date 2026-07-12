@@ -21,25 +21,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'invalid_session', message: 'Session expired. Please sign in again.' }, { status: 401 })
   }
 
-  // ── 2. Check plan — premium or pro only ───────────────────
+  // ── 2. Check plan or credits ───────────────────────────────
   const { data: profile } = await supabase
     .from('profiles')
-    .select('plan, subscription_status')
+    .select('plan, subscription_status, resume_credits')
     .eq('id', user.id)
     .single()
 
   const plan = profile?.plan || 'free'
-
-  if (plan === 'free') {
-    return NextResponse.json(
-      { error: 'upgrade_required', message: 'The resume builder is available on Premium and Pro plans.' },
-      { status: 402 }
-    )
-  }
+  const credits = profile?.resume_credits || 0
+  const isPaid = plan === 'premium' || plan === 'pro'
 
   if (profile?.subscription_status === 'past_due') {
     return NextResponse.json(
       { error: 'payment_required', message: 'Your payment failed. Please update your billing details.' },
+      { status: 402 }
+    )
+  }
+
+  if (!isPaid && credits <= 0) {
+    return NextResponse.json(
+      { error: 'no_credits', message: 'You have no resume credits. Buy a pack or upgrade to Premium.' },
       { status: 402 }
     )
   }
@@ -139,5 +141,13 @@ Degree | Institution | Year`
   const data = await response.json()
   const resumeText = data.content?.[0]?.text
 
-  return NextResponse.json({ resume: resumeText })
+  // Decrement credits for free users
+  if (!isPaid) {
+    await supabase
+      .from('profiles')
+      .update({ resume_credits: credits - 1 })
+      .eq('id', user.id)
+  }
+
+  return NextResponse.json({ resume: resumeText, credits_remaining: isPaid ? null : credits - 1 })
 }

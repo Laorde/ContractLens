@@ -44,20 +44,34 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
-      case 'customer.subscription.created':
       case 'checkout.session.completed': {
-        let subscription: Stripe.Subscription | undefined
-        let userId: string | undefined
-        if (event.type === 'checkout.session.completed') {
-          const session = event.data.object as Stripe.Checkout.Session
-          if (session.mode !== 'subscription' || !session.subscription) break
-          subscription = await stripe.subscriptions.retrieve(session.subscription as string)
-          userId = session.metadata?.supabase_user_id || subscription.metadata?.supabase_user_id
-        } else {
-          subscription = event.data.object as Stripe.Subscription
-          userId = subscription.metadata?.supabase_user_id
+        const session = event.data.object as Stripe.Checkout.Session
+        const userId = session.metadata?.supabase_user_id
+        if (!userId) break
+
+        // One-time resume credit purchase
+        if (session.mode === 'payment' && session.metadata?.type === 'resume_credits') {
+          const creditsToAdd = parseInt(session.metadata?.credits_to_add || '5', 10)
+          const { data: profile } = await supabase.from('profiles').select('resume_credits').eq('id', userId).single()
+          const current = profile?.resume_credits || 0
+          await supabase.from('profiles').update({ resume_credits: current + creditsToAdd }).eq('id', userId)
+          break
         }
-        if (!subscription || !userId) break
+
+        // Subscription checkout
+        if (session.mode === 'subscription' && session.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+          const priceId = subscription.items.data[0]?.price?.id
+          const { plan, billing_cycle } = resolvePlan(priceId)
+          await supabase.from('profiles').update({ plan, billing_cycle, stripe_subscription_id: subscription.id, stripe_price_id: priceId, subscription_status: subscription.status, scans_used: 0, scans_reset_at: new Date().toISOString() }).eq('id', userId)
+        }
+        break
+      }
+
+      case 'customer.subscription.created': {
+        const subscription = event.data.object as Stripe.Subscription
+        const userId = subscription.metadata?.supabase_user_id
+        if (!userId) break
         const priceId = subscription.items.data[0]?.price?.id
         const { plan, billing_cycle } = resolvePlan(priceId)
         await supabase.from('profiles').update({ plan, billing_cycle, stripe_subscription_id: subscription.id, stripe_price_id: priceId, subscription_status: subscription.status, scans_used: 0, scans_reset_at: new Date().toISOString() }).eq('id', userId)
