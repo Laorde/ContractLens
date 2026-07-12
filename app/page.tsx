@@ -199,6 +199,9 @@ export default function HomePage() {
                       <div>✓ AI contract analysis</div>
                       <div>✓ Plain-English summaries</div>
                       <div>✓ Risk flag detection</div>
+                      {tier !== 'Free' && <div className="text-emerald-400">✓ HiringLens resume builder</div>}
+                      {tier !== 'Free' && <div>✓ Scan history saved</div>}
+                      {tier === 'Pro' && <div>✓ Priority support</div>}
                     </div>
 
                     <button
