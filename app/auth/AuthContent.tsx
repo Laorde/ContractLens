@@ -20,6 +20,24 @@ export default function AuthContent() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [forgotPassword, setForgotPassword] = useState(false)
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setMessage('')
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      })
+      if (error) throw error
+      setMessage('Reset link sent! Check your email.')
+    } catch (err: any) {
+      setMessage(err.message || 'Something went wrong')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -54,6 +72,47 @@ export default function AuthContent() {
     }
   }
 
+  if (forgotPassword) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-[#0c0c10] text-white px-6">
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-black/40 p-8 backdrop-blur">
+          <h1 className="text-3xl font-bold mb-2 text-center">Reset Password</h1>
+          <p className="text-center text-white/60 mb-6">Enter your email and we'll send you a reset link.</p>
+
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-yellow-500"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-yellow-500 py-3 font-semibold text-black hover:opacity-90 transition disabled:opacity-50"
+            >
+              {loading ? 'Sending...' : 'Send Reset Link'}
+            </button>
+          </form>
+
+          {message && (
+            <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-center">
+              {message}
+            </div>
+          )}
+
+          <div className="mt-6 text-center text-sm text-white/60">
+            <button onClick={() => setForgotPassword(false)} className="hover:text-yellow-500">
+              ← Back to sign in
+            </button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#0c0c10] text-white px-6">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-black/40 p-8 backdrop-blur">
@@ -77,14 +136,36 @@ export default function AuthContent() {
             className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-yellow-500"
           />
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-yellow-500"
-          />
+          {mode !== 'signup' && (
+            <div className="relative">
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-yellow-500"
+              />
+              <button
+                type="button"
+                onClick={() => setForgotPassword(true)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/40 hover:text-yellow-500"
+              >
+                Forgot?
+              </button>
+            </div>
+          )}
+
+          {mode === 'signup' && (
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-yellow-500"
+            />
+          )}
 
           <button
             type="submit"
