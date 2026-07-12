@@ -216,9 +216,10 @@ export default function HiringLensBuilderPage() {
                   value={sector}
                   onChange={e => setSector(e.target.value)}
                   className={inputClass + ' cursor-pointer'}
+                  style={{ colorScheme: 'dark' }}
                 >
-                  <option value="">Select a sector...</option>
-                  {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
+                  <option value="" style={{ background: '#0d1f14' }}>Select a sector...</option>
+                  {SECTORS.map(s => <option key={s} value={s} style={{ background: '#0d1f14' }}>{s}</option>)}
                 </select>
               </div>
               <div>

@@ -14,6 +14,7 @@ export default function AuthContent() {
   const searchParams = useSearchParams()
 
   const mode = searchParams.get('mode') || 'signin'
+  const redirect = searchParams.get('redirect') || '/scan'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -44,7 +45,7 @@ export default function AuthContent() {
 
         if (error) throw error
 
-        router.push('/scan')
+        router.push(redirect)
       }
     } catch (err: any) {
       setMessage(err.message || 'Something went wrong')
