@@ -214,6 +214,16 @@ export default function HiringLensBuilderPage() {
         setCredits(data.credits_remaining)
       }
       setResume(data.resume)
+
+      // Save to resumes table
+      await supabase.from('resumes').insert({
+        user_id: session.user.id,
+        job_title: jobTitle,
+        sector,
+        mode,
+        content: data.resume,
+      })
+
       setTimeout(() => outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } catch {
       setError('Network error. Please check your connection and try again.')
