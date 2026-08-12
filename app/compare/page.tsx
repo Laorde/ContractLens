@@ -97,22 +97,27 @@ export default function ComparePage() {
     setLoading(true)
     setResult(null)
 
-    const res = await fetch('/api/compare', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ contractA, contractB, labelA, labelB }),
-    })
+    try {
+      const res = await fetch('/api/compare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ contractA, contractB, labelA, labelB }),
+      })
 
-    const data = await res.json()
-    setLoading(false)
+      const data = await res.json()
 
-    if (!res.ok) {
-      setError(data.message || data.error || 'Comparison failed.')
-      return
+      if (!res.ok) {
+        setError(data.message || data.error || 'Comparison failed.')
+        return
+      }
+
+      setResult(data.result)
+      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+    } catch {
+      setError('Network error. Please check your connection and try again.')
+    } finally {
+      setLoading(false)
     }
-
-    setResult(data.result)
-    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
   }
 
   const SEVERITY_COLOR: Record<string, string> = {

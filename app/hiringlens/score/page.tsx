@@ -41,22 +41,27 @@ export default function ScoreResumePage() {
     setLoading(true)
     setResult(null)
 
-    const res = await fetch('/api/score-resume', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ resume, jobDescription }),
-    })
+    try {
+      const res = await fetch('/api/score-resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ resume, jobDescription }),
+      })
 
-    const data = await res.json()
-    setLoading(false)
+      const data = await res.json()
 
-    if (!res.ok) {
-      setError(data.message || data.error || 'Scoring failed. Please try again.')
-      return
+      if (!res.ok) {
+        setError(data.message || data.error || 'Scoring failed. Please try again.')
+        return
+      }
+
+      setResult(data.result)
+      setTimeout(() => outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+    } catch {
+      setError('Network error. Please check your connection and try again.')
+    } finally {
+      setLoading(false)
     }
-
-    setResult(data.result)
-    setTimeout(() => outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
   }
 
   const inputClass = 'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-emerald-400/60 focus:outline-none transition-colors text-sm resize-y'

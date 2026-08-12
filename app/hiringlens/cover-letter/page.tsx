@@ -100,29 +100,34 @@ export default function CoverLetterPage() {
     setLoading(true)
     setCoverLetter('')
 
-    const res = await fetch('/api/cover-letter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ jobTitle, company, sector, tone, resume, jobDescription, candidateName }),
-    })
+    try {
+      const res = await fetch('/api/cover-letter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ jobTitle, company, sector, tone, resume, jobDescription, candidateName }),
+      })
 
-    const data = await res.json()
-    setLoading(false)
+      const data = await res.json()
 
-    if (!res.ok) {
-      if (data.error === 'no_credits') {
-        setPlanError(true)
-      } else {
-        setError(data.message || data.error || 'Something went wrong. Please try again.')
+      if (!res.ok) {
+        if (data.error === 'no_credits') {
+          setPlanError(true)
+        } else {
+          setError(data.message || data.error || 'Something went wrong. Please try again.')
+        }
+        return
       }
-      return
-    }
 
-    if (data.credits_remaining !== null && data.credits_remaining !== undefined) {
-      setCredits(data.credits_remaining)
+      if (data.credits_remaining !== null && data.credits_remaining !== undefined) {
+        setCredits(data.credits_remaining)
+      }
+      setCoverLetter(data.coverLetter)
+      setTimeout(() => outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+    } catch {
+      setError('Network error. Please check your connection and try again.')
+    } finally {
+      setLoading(false)
     }
-    setCoverLetter(data.coverLetter)
-    setTimeout(() => outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
   }
 
   async function copyToClipboard() {

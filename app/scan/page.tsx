@@ -113,42 +113,57 @@ export default function ScanPage() {
 
     setLoading(true)
 
-    let messages: any[]
+    try {
+      let messages: any[]
 
-    if (imageBase64) {
-      messages = [{
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: imageType, data: imageBase64 } },
-          { type: 'text', text: 'Analyze this contract image.' }
-        ]
-      }]
-    } else {
-      messages = [{ role: 'user', content: `Analyze this contract:\n\n${text.slice(0, 15000)}` }]
+      if (imageBase64) {
+        messages = [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: imageType, data: imageBase64 } },
+            { type: 'text', text: 'Analyze this contract image.' }
+          ]
+        }]
+      } else {
+        messages = [{ role: 'user', content: `Analyze this contract:\n\n${text.slice(0, 15000)}` }]
+      }
+
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ system: FULL_SYSTEM, mode, messages })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.message || data.error || 'Analysis failed.')
+        return
+      }
+
+      const raw = data.content?.map((b: any) => b.text || '').join('') || '{}'
+
+      let parsed: any
+      try {
+        parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
+      } catch {
+        alert('Analysis returned an unexpected format. Please try again.')
+        return
+      }
+
+      setResult(parsed)
+
+      // Save silently — don't block or alert on failure
+      supabase.from('scans').insert({
+        user_id: session.user.id,
+        title: fileName || text.slice(0, 80),
+        result: parsed
+      }).catch(() => {})
+    } catch {
+      alert('Network error. Please check your connection and try again.')
+    } finally {
+      setLoading(false)
     }
-
-    const res = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ system: FULL_SYSTEM, mode, messages })
-    })
-
-    setLoading(false)
-
-    const data = await res.json()
-
-    if (!res.ok) return alert(data.message || data.error || 'Analysis failed.')
-
-    const raw = data.content?.map((b: any) => b.text || '').join('') || '{}'
-    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
-
-    setResult(parsed)
-
-    await supabase.from('scans').insert({
-      user_id: session.user.id,
-      title: fileName || text.slice(0, 80),
-      result: parsed
-    })
   }
 
   return (

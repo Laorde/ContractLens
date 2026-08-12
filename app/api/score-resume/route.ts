@@ -78,7 +78,14 @@ ${jobDescription.slice(0, 4000)}`
 
   const data = await response.json()
   const raw = data.content?.[0]?.text || '{}'
-  const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
+
+  let parsed: any
+  try {
+    parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
+  } catch {
+    console.error('Failed to parse Claude response:', raw.slice(0, 200))
+    return NextResponse.json({ error: 'Scoring returned unexpected output. Please try again.' }, { status: 500 })
+  }
 
   return NextResponse.json({ result: parsed })
 }
