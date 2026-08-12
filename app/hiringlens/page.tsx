@@ -13,7 +13,9 @@ export default function HiringLensPage() {
             <h1 className="mt-7 text-5xl font-black leading-tight text-white md:text-7xl">Resumes that get noticed. By <span className="text-emerald-400">AI</span> and by <span className="text-emerald-400">humans</span>.</h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">Answer a few simple questions and HiringLens helps you create a clean, professional, ATS-friendly resume tailored to the job you want.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/hiringlens/builder" className="rounded-xl bg-emerald-400 px-6 py-3 font-medium text-black hover:bg-emerald-300">Create My Resume →</Link>
+              <Link href="/hiringlens/builder" className="rounded-xl bg-emerald-400 px-6 py-3 font-medium text-black hover:bg-emerald-300">Build My Resume →</Link>
+              <Link href="/hiringlens/cover-letter" className="rounded-xl border border-emerald-400/40 px-6 py-3 text-emerald-400 hover:bg-emerald-400/10 transition-colors">Cover Letter</Link>
+              <Link href="/hiringlens/score" className="rounded-xl border border-emerald-400/40 px-6 py-3 text-emerald-400 hover:bg-emerald-400/10 transition-colors">Score Resume</Link>
               <Link href="/" className="rounded-xl border border-white/15 px-6 py-3 text-white hover:bg-white/10">Back to ContractLens</Link>
             </div>
           </div>

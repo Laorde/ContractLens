@@ -54,6 +54,10 @@ export function Navbar({ simple = false }: { simple?: boolean }) {
               Scan
             </Link>
 
+            <Link className="text-sm text-[#8b8b99] hover:text-[#f3efe7]" href="/compare">
+              Compare
+            </Link>
+
             <Link className="text-sm text-[#8b8b99] hover:text-[#f3efe7]" href="/account">
               Account
             </Link>
