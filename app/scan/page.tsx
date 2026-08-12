@@ -154,11 +154,13 @@ export default function ScanPage() {
       setResult(parsed)
 
       // Save silently — don't block or alert on failure
-      supabase.from('scans').insert({
-        user_id: session.user.id,
-        title: fileName || text.slice(0, 80),
-        result: parsed
-      }).catch(() => {})
+      try {
+        await supabase.from('scans').insert({
+          user_id: session.user.id,
+          title: fileName || text.slice(0, 80),
+          result: parsed
+        })
+      } catch { /* ignore save failures */ }
     } catch {
       alert('Network error. Please check your connection and try again.')
     } finally {
